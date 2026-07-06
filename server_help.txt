@@ -1,0 +1,148 @@
+========================================================================
+             JNC GREASECYCLING - CPANEL PRODUCTION DEPLOYMENT GUIDE
+========================================================================
+
+This guide explains how to deploy the Laravel API Backend and the Vue 3 
+Driver PWA Frontend to a cPanel shared hosting environment.
+
+------------------------------------------------------------------------
+Part 1: Deploying the Laravel API Backend
+------------------------------------------------------------------------
+For maximum security on cPanel, you should keep the core Laravel code files 
+OUTSIDE of the public folder (e.g., above public_html) so they cannot be 
+accessed directly via a browser.
+
+1. Folder Directory Setup:
+   - Create a directory in your cPanel home folder named:
+     /home/yourusername/greasecycling-backend
+   - Upload all Laravel project files and folders into this directory, 
+     EXCEPT for the 'public' directory.
+   
+2. Public Files Deployment:
+   - Upload the contents of Laravel's 'public' folder directly into your 
+     target public folder (e.g., /public_html or a subdomain folder).
+   - In that public folder, open 'index.php' and update the path references 
+     so they point to the core Laravel files:
+     
+     Change:
+     require __DIR__.'/../vendor/autoload.php';
+     $app = require_once __DIR__.'/../bootstrap/app.php';
+     
+     To:
+     require __DIR__.'/../greasecycling-backend/vendor/autoload.php';
+     $app = require_once __DIR__.'/../greasecycling-backend/bootstrap/app.php';
+
+3. Environment Configuration (.env):
+   - Edit the '.env' file in /home/yourusername/greasecycling-backend/
+   - Set the production environment configurations:
+     APP_ENV=production
+     APP_DEBUG=false
+     APP_URL=https://yourbackenddomain.com
+     
+     DB_CONNECTION=mysql
+     DB_HOST=127.0.0.1
+     DB_DATABASE=yourcpaneldb_name
+     DB_USERNAME=yourcpaneldb_user
+     DB_PASSWORD=yourdatabasepassword
+
+4. Database Migrations:
+   - If cPanel has SSH Terminal access, run in project folder:
+     php artisan migrate --force
+     php artisan db:seed --class=RolesAndPermissionsSeeder --force
+   
+   - If no SSH is available:
+     Temporarily add a web route in routes/web.php:
+     Route::get('/run-migrations', function () {
+         \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+         return 'Migration and Seed Successful!';
+     });
+     Access this URL once via your browser (e.g., https://yourbackenddomain.com/run-migrations), 
+     then delete the route immediately from web.php.
+
+5. Cron Job Scheduler Setup:
+   - Go to "Cron Jobs" in cPanel.
+   - Add a new cron job configured to run every minute (* * * * *):
+     cd /home/yourusername/greasecycling-backend && php artisan schedule:run >> /dev/null 2>&1
+
+------------------------------------------------------------------------
+Part 2: Deploying the Vue 3 Driver PWA App
+------------------------------------------------------------------------
+The Vue 3 driver app compiles into standard static assets (HTML, JS, CSS) 
+that can be served directly from any folder or subdomain in cPanel.
+
+1. Configure API Base URL Locally:
+   - In your local development folder, open/create 'driver-app/.env.production'
+   - Point the API base URL to your production Laravel API address:
+     VITE_API_BASE_URL=https://yourbackenddomain.com/api
+   
+2. Compile the Vue App:
+   - Open a terminal inside 'driver-app' and run the build command:
+     npm run build
+   - This compiles the application into 'driver-app/dist'
+
+3. Upload Build Files to cPanel:
+   - Compress the contents of the 'driver-app/dist' folder into a ZIP file.
+   - In cPanel File Manager, upload and extract this ZIP directly inside 
+     your target directory.
+     
+     * Option A (Subdomain - Recommended):
+       Upload to the document root of a subdomain (e.g. driver.yourdomain.com).
+     
+     * Option B (Subdirectory):
+       Upload to a folder inside public_html (e.g. public_html/driver).
+
+4. Apache URL Rewrite Setup (.htaccess) - CRITICAL:
+   Because Vue is a Single Page Application (SPA) with dynamic routing, 
+   Apache needs to redirect all page refresh requests back to index.html. 
+   Otherwise, visiting '/profile' or '/route' and refreshing the browser 
+   will result in a "404 Not Found" error.
+
+   - In the directory where you uploaded your Vue build files, create or 
+     edit the '.htaccess' file and add the following rules:
+
+     * If using a Subdomain (Option A):
+       -----------------------------------------------------------------
+       <IfModule mod_rewrite.c>
+         RewriteEngine On
+         RewriteBase /
+         RewriteRule ^index\.html$ - [L]
+         RewriteCond %{REQUEST_FILENAME} !-f
+         RewriteCond %{REQUEST_FILENAME} !-d
+         RewriteRule . /index.html [L]
+       </IfModule>
+       -----------------------------------------------------------------
+
+     * If using a Subdirectory (Option B - e.g., yourdomain.com/driver):
+       -----------------------------------------------------------------
+       <IfModule mod_rewrite.c>
+         RewriteEngine On
+         RewriteBase /driver/
+         RewriteRule ^index\.html$ - [L]
+         RewriteCond %{REQUEST_FILENAME} !-f
+         RewriteCond %{REQUEST_FILENAME} !-d
+         RewriteRule . /driver/index.html [L]
+       </IfModule>
+       -----------------------------------------------------------------
+
+5. HTTPS Redirect:
+   Ensure you have SSL active on cPanel. To force HTTPS, add these rules to 
+   the top of your Vue app's .htaccess file:
+   
+   RewriteCond %{HTTPS} off
+   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+------------------------------------------------------------------------
+Part 3: CORS (Cross-Origin Resource Sharing)
+------------------------------------------------------------------------
+If your Vue App (e.g., driver.yourdomain.com) and Laravel API Backend 
+(e.g., api.yourdomain.com) run on different subdomains, ensure the Laravel 
+backend accepts cross-origin API requests from the frontend.
+
+- Open 'config/cors.php' (in your Laravel backend folder) and check:
+  'allowed_origins' => ['https://driver.yourdomain.com'],
+  'allowed_methods' => ['*'],
+  'allowed_headers' => ['*'],
+  'supports_credentials' => true,
+
+Deployment complete! Your driver portal will now run seamlessly.
+========================================================================

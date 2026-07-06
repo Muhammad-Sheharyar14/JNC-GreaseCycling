@@ -1,0 +1,171 @@
+========================================================
+  LINKEDIN PROJECT ENTRY — JNC GreaseCycling Operations Platform
+========================================================
+
+PROJECT TITLE (copy-paste exactly):
+  JNC GreaseCycling — Full-Stack Field Operations & Driver Management Platform
+
+ASSOCIATED WITH:
+  Webycart
+
+DATES:
+  Start: June 2025  |  End: July 2025  (or mark "In Progress" if ongoing)
+
+PROJECT URL (if hosted):
+  https://test21.webycart.pk/admin
+
+========================================================
+  LINKEDIN DESCRIPTION (2,000 characters max — copy-paste ready)
+========================================================
+
+Built a production-grade, end-to-end field operations platform for a US-based grease recycling company — covering everything from customer management and route scheduling to real-time driver tracking and automated payout calculation.
+
+🔧 Backend & Admin Panel (Laravel 12 + Filament v4):
+• Multi-role access control (Admin, Dispatcher, Driver, Accounting) with granular Filament policies
+• Full CRUD management for Customers, Locations, Routes, and Users — with CSV import/export
+• Intelligent route scheduler that auto-generates daily stops based on service frequency and day-of-week rules
+• Dispatch Dashboard with emergency stop management, stop reassignment, and real-time status tracking
+• Automated payout engine calculating driver earnings per stop using configurable per-location rates
+• Reports module with location-level stats, exportable CSVs, and accounting-ready summaries
+• Google Maps embedded live preview in the location form (reactive address-to-map binding)
+• Custom branded Filament theme (orange/dark palette aligned to company logo)
+
+📱 Driver Web App (Vue 3 + Pinia + Vite):
+• PWA-enabled mobile interface for drivers to view today's assigned route and stops
+• Start/complete route run flow with real-time GPS stop tracking and status logging
+• Offline-first architecture using IndexedDB (via idb) — works without network connectivity
+• Pounds-collected logging, skip-reason capture, and duplicate pickup warnings
+• JWT-authenticated REST API with Laravel Sanctum
+
+📦 Android App (Capacitor + Remote Webview):
+• Packaged as a native Android APK using Capacitor — loads live web app remotely from the production server
+• Full Chrome DevTools debugging support via USB for on-device QA
+• Signed release APK ready for Google Play Store or direct driver distribution
+
+⚙️ Tech Stack:
+Laravel 12 · Filament v4 · Vue 3 · Pinia · Vite · Capacitor · Laravel Sanctum · MySQL · PWA · IndexedDB · Apache (cPanel)
+
+55 automated PHPUnit tests — all passing.
+
+========================================================
+  SKILLS TO TAG (add these in the "Skills" section of the project)
+========================================================
+
+Laravel | Laravel Filament | Vue.js | Pinia | Vite | PHP |
+MySQL | REST API Design | Laravel Sanctum | Progressive Web Apps (PWA) |
+Capacitor | Android App Development | IndexedDB | Role-Based Access Control |
+Multi-Role Authentication | CSV Import/Export | Google Maps API |
+Automated Testing (PHPUnit) | cPanel Deployment | Apache (.htaccess)
+
+========================================================
+  STEP-BY-STEP GUIDE: HOW TO ADD THIS TO YOUR LINKEDIN PROFILE
+========================================================
+
+STEP 1 — Open LinkedIn
+  Go to: https://www.linkedin.com and log in to your account.
+
+STEP 2 — Go to Your Profile
+  Click your profile photo or name in the top navigation bar.
+
+STEP 3 — Add a New Project
+  • Scroll down until you see the "Projects" section.
+  • If it's not visible, click "Add section" (near the top of your profile
+    under your name/headline).
+  • In the dropdown, look under "Recommended" or "Accomplishments" and
+    select "Add Projects".
+
+STEP 4 — Fill in the Project Form
+  • Project Name:
+      JNC GreaseCycling — Full-Stack Field Operations & Driver Management Platform
+  • Start Date: June 2025
+  • End Date: July 2025 (or check "I am currently working on this project")
+  • Project URL:
+      https://test21.webycart.pk/admin
+  • Description:
+      Paste the full description from the "LINKEDIN DESCRIPTION" section above.
+      (LinkedIn allows up to 2,000 characters — the description above fits perfectly.)
+  • Associated with:
+      Select "Webycart" (your current employer) so it appears under your experience
+      AND in the Projects section. This doubles its visibility on your profile.
+  • Skills:
+      Add the tags listed in the "SKILLS TO TAG" section above. LinkedIn allows
+      you to add skills that map to your profile endorsements — use all relevant ones.
+
+STEP 5 — Add Contributors (Optional)
+  If you worked with any teammates, you can add them here. If solo, leave this blank.
+
+STEP 6 — Save and Review
+  Click "Save". Your project will now appear in your Projects section and be linked
+  to the Webycart work experience on your profile.
+
+STEP 7 — Pin to Featured Section (Recommended for max visibility)
+  • Go back to your profile.
+  • Click "Add section" → "Featured".
+  • You can add the project URL as a Link (https://test21.webycart.pk/admin)
+    with a custom title and description — this puts it right below your About section,
+    the most-viewed part of your profile.
+
+STEP 8 — Share as a Post for Maximum Reach
+  After adding the project, write a LinkedIn post announcing it. Use the text
+  from the "LINKEDIN POST TEMPLATE" section below to get high engagement.
+
+========================================================
+  LINKEDIN POST TEMPLATE (for maximum SEO & reach)
+========================================================
+
+Just wrapped a full-stack field operations platform for a US grease recycling company — from the ground up. 🚛
+
+Here's what I built in a month:
+
+✅ Laravel 12 + Filament v4 Admin Panel
+  — Multi-role access (Admin, Dispatcher, Driver, Accounting)
+  — Route scheduler auto-generating daily stops
+  — Automated payout engine with per-location rate configuration
+  — CSV import/export, Google Maps live preview, dispatch dashboard
+
+✅ Vue 3 PWA Driver App
+  — Real-time route & stop tracking for field drivers
+  — Offline-first (IndexedDB) — works without internet
+  — JWT-authenticated REST API with Laravel Sanctum
+
+✅ Native Android APK (Capacitor)
+  — Packaged as a real Android app — no browser bar, full native feel
+  — Loads live updates from the server automatically — no re-releases needed
+  — Signed release APK ready for Google Play Store
+
+55 PHPUnit tests. All passing.
+
+What I enjoyed most: the offline-first sync architecture. Drivers operate in warehouses and industrial zones where connectivity drops constantly — so the app queues all actions locally in IndexedDB and syncs them when the connection returns. No data loss.
+
+Tech: Laravel · Filament · Vue 3 · Pinia · Vite · Capacitor · MySQL · PWA
+
+#Laravel #FilamentPHP #Vue3 #PHP #FullStack #MobileApp #PWA #Capacitor #AndroidDev #WebDevelopment #Pakistan
+
+========================================================
+  SEO TIPS FOR YOUR LINKEDIN PROFILE
+========================================================
+
+1. HEADLINE — Update your LinkedIn headline to include keywords recruiters search.
+   Recommended headline:
+   "Senior Full Stack Engineer | Laravel · Filament · Vue.js · AI Integration · Automation"
+
+2. ABOUT SECTION — Mention this project briefly in your About section summary.
+   Example addition:
+   "Recent work includes a full-stack field operations platform (Laravel 12, Filament v4,
+   Vue 3 PWA, Capacitor Android) for a US logistics client — with offline-first driver
+   mobile app and automated payout calculation engine."
+
+3. SKILLS SECTION — LinkedIn's algorithm boosts profiles with skills that match
+   job postings. Make sure all skills in the "SKILLS TO TAG" list above are also in
+   your main profile skills section and have endorsements.
+
+4. PROJECT KEYWORDS — LinkedIn indexes project descriptions for search. The words
+   "Laravel Filament", "Vue.js", "PWA", "Capacitor", "REST API", "Role-Based Access",
+   "Route Scheduling", and "Driver Management" are searchable keywords that will make
+   your profile appear in recruiter searches.
+
+5. ENGAGEMENT — Comment on 2–3 posts by Laravel and Vue.js communities after posting
+   your project. LinkedIn's algorithm shows your post to more people when you are active
+   in conversations around the same time as your post.
+
+========================================================

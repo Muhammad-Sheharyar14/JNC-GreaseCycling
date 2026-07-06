@@ -1,0 +1,9 @@
+{
+  "appId": "com.greasecycling.driver",
+  "appName": "JNC GreaseCycling",
+  "webDir": "dist",
+  "server": {
+    "url": "https://test21.webycart.pk/driver/",
+    "cleartext": true
+  }
+}

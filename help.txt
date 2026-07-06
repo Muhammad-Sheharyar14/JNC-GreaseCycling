@@ -1,0 +1,209 @@
+========================================================================
+                      JNC GREASECYCLING - COMPLETE SYSTEM TESTING GUIDE
+========================================================================
+
+This guide provides instructions on how to start the servers, run commands,
+and verify all steps of the JNC GreaseCycling Route Management System,
+including the Filament Admin Panel, live Dispatch Dashboard, Pickup History,
+Reporting, Payout Flow, System Settings, User Management, CSV Imports/Exports,
+and the Vue 3 Driver PWA with Offline sync.
+
+------------------------------------------------------------------------
+Prerequisites & Setup
+------------------------------------------------------------------------
+Ensure Apache and MySQL/MariaDB are running in XAMPP (or your database engine is active).
+
+1. Reset and Seed the Database:
+   Open a terminal in the project root directory (c:\xampp\htdocs\JNC GreaseCycling) 
+   and run:
+   
+   php artisan migrate:fresh --seed
+
+   This resets all tables and seeds the default roles and user accounts:
+   - Admin User:      admin@greasecycling.com      (Password: password)
+   - Dispatcher User:  dispatcher@greasecycling.com (Password: password)
+   - Driver User:      driver@greasecycling.com      (Password: password)
+   - Accounting User:  accounting@greasecycling.com  (Password: password)
+
+2. Start the Backend server:
+   
+   php artisan serve
+
+   By default, the server will start at: http://127.0.0.1:8000
+
+------------------------------------------------------------------------
+1. Access Controls & User Management
+------------------------------------------------------------------------
+Go to: http://127.0.0.1:8000/admin
+
+1. Log in as admin@greasecycling.com (full credentials):
+   - Navigate to "Administration" > "Users" in the sidebar.
+   - Verify you can create new users, select a role (Admin, Dispatcher, Accounting, Driver), configure a phone number, and toggle their active status.
+   - Click "Delete" (trash icon) directly from the row actions to delete users instantly, or click "Edit" to modify their profiles.
+   - Edit an existing user (e.g. Driver User). Toggle "Active Status" to false (deactivated). Verify that user cannot authenticate or access resources.
+   - Toggle them back to active.
+
+2. Log in as other roles to check access limits:
+   - Dispatcher: Can manage Customers, Locations, and Routes. Cannot see "Users" under Administration.
+   - Accounting: Can see "Payout Records" and "Reports" in the sidebar. Has read-only visibility for Customers, Locations, and Routes (no edit or delete buttons visible in tables). Cannot see "Users" or "Settings".
+   - Driver: Denied access entirely. If a Driver attempts to log in at http://127.0.0.1:8000/admin, they are rejected.
+
+------------------------------------------------------------------------
+2. Customer & Location Management
+------------------------------------------------------------------------
+Log in as Admin or Dispatcher:
+1. Go to "Customers":
+   - Create a new Customer record (name, contact details, notes).
+   - Upload a PDF or Image for "Contract / Termination Invoice".
+   - View the Customer listing. Verify status filters (Lead, Active, Cancelled) and sorting.
+   - Click "Delete" row action to delete records directly.
+2. Go to "Locations":
+   - Add a Location linked to your Customer.
+   - Enter a "Service Address". Autocomplete suggestions load. Selecting an address populates coordinates and map links.
+   - Observe the Map Preview: A live Google Map iframe appears reactively, loading the chosen service address on the fly.
+   - Set a "Reimbursement Rate" (e.g. 0.10) and "Service Frequency" (e.g. weekly).
+   - Set "Status" to Active and assign a "Default Route" (e.g. Route A).
+
+------------------------------------------------------------------------
+3. Route Management & Scheduling
+------------------------------------------------------------------------
+Log in as Admin or Dispatcher:
+1. Go to "Routes" > "Create":
+   - Name: Route Monday North
+   - Service Days: Check "Monday"
+   - Assigned Driver: Driver User
+2. Inside Route Edit:
+   - Drag and drop active locations into the stops repeater checklist to define their visit order sequence. Click Save.
+3. Generate Daily Stop List:
+   Run the route scheduler generation command in your terminal:
+   
+   php artisan routes:generate 2026-06-29
+
+   (Note: 2026-06-29 is a Monday. The scheduler selects Route Monday North because it runs on Mondays, retrieves active weekly locations, audits last completion logs, and builds scheduled stops for that day).
+   Verify command output shows stops populated.
+
+------------------------------------------------------------------------
+4. Dispatch Dashboard
+------------------------------------------------------------------------
+Log in as Dispatcher or Admin:
+1. Go to "Dispatch Dashboard" in the sidebar:
+   - Select the Route from the sidebar (Route Monday North).
+   - Set Date to 2026-06-29.
+   - You will see the scheduled stops list displayed in order.
+2. Test Actions:
+   - "Add Stop" (Header action): Insert a one-time emergency stop for a location. Verify it appends at the end.
+   - "Reassign" (Stop row action): Change a stop's route/driver for the day.
+   - "Delete Stop" (Stop row action): Remove a stop from today's list without deleting the location.
+   - "Mark Complete Manually" (Stop row action): Input weight and complete a stop on behalf of the driver.
+3. Mobile Responsiveness:
+   - Resize the browser to mobile viewport (e.g., iPhone SE/375px width).
+   - Verify layout columns stack vertically, description panels collapse, and the table scrolls internally within the card without stretching the page.
+
+------------------------------------------------------------------------
+5. Driver Vue 3 App & Offline Sync
+------------------------------------------------------------------------
+The driver-app runs on an independent Vite server.
+
+1. Start Vue Development Server:
+   Open a separate terminal window and set the local Node.js folder in your PATH:
+   
+   * Command Prompt (cmd):
+     set PATH=C:\xampp\htdocs\JNC GreaseCycling\node;%PATH%
+     cd driver-app
+     npm install
+     npm run dev
+
+   * PowerShell:
+     $env:PATH = "C:\xampp\htdocs\JNC GreaseCycling\node;" + $env:PATH
+     cd driver-app
+     npm install
+     npm run dev
+
+   Open http://localhost:5173 in Chrome or Edge.
+
+2. Navigation & Profile View:
+   - Log in as driver@greasecycling.com / password.
+   - Observe Header: In the top right, a round initial-avatar indicates the logged-in driver. Hovering/clicking it displays a dropdown with "View Profile" and "Sign Out".
+   - Click "View Profile": Access statistics counters (Completed Routes, Serviced Stops, Grease Recycled) and a recent pickup history table.
+   - Return to Home, and Click "Start Route Run".
+   - Tap a stop to view its address, customer notes, instructions, and maps.
+   - Observe Real-Time Navigation: Dynamic "Distance Remaining" (computed using Haversine formula against GPS) and "Estimated Arrival" update live.
+   - Click "Log Pickup / Skip". Toggle completed, enter weight (e.g. 150 lbs), click Submit. Use the clean Modal prompts instead of system dialogs.
+3. Test Offline Logging:
+   - Open browser DevTools (F12) > Network tab. Change throttling to "Offline".
+   - Go to a pending stop. Log it as "Skipped", select a reason ("No Access"), and Submit.
+   - Verify the app stays responsive, shows the orange offline banner, and queues the pickup.
+   - Change Network back to "Online" (No throttling).
+   - Verify the queue instantly uploads and shows the green sync success alert.
+4. Mark Route Done:
+   - Click "Mark Route Complete" at the bottom to log route execution duration.
+
+------------------------------------------------------------------------
+6. Pickup History & Reporting
+------------------------------------------------------------------------
+Log in as Admin, Dispatcher, or Accounting:
+1. Go to "Locations" > Edit Location:
+   - Scroll to "Collection History" at the bottom to view past logged pickups.
+   - Look at the "Overview Stats" widget showing: Total weight, completed stops, skipped stops, average weight, and days since last service.
+2. Go to "Reports" in the sidebar:
+   - Review overview metrics cards.
+   - Use the date range filter to narrow metrics.
+   - Check breakdowns grouped by Driver, Route, and Customer.
+   - Audit the "Skipped Stop Report" at the bottom.
+   - Click "Export to CSV" on any report table to download CSV reports.
+
+------------------------------------------------------------------------
+7. Payout Calculations
+------------------------------------------------------------------------
+Log in as Admin or Accounting:
+1. Go to "Payout Records" in the sidebar:
+   - Click "Generate Payouts" (Header Action).
+   - Select Customer (or leave blank for all), Start Date, and End Date.
+   - (Optional) Enter an "Override Rate" (e.g. 0.15). If left blank, it uses each location's individual rate.
+   - Click Submit.
+2. Manual Creation:
+   - Click "New Payout Record".
+   - Select Customer, Start Date, and End Date.
+   - Observe Reactive Calculator: The form immediately queries completed collection weights and snapshots default rates, pre-populating "Total Weight", "Reimbursement Rate", and "Total Owed" in real time.
+3. Record Payments:
+   - Click "Mark Paid" (Row Action).
+   - Enter Date Paid, Payment Method (Check, ACH, Cash, Other), and Notes. Click Save.
+4. Export:
+   - Select payouts and choose bulk action "Export Selected to CSV" to download a QuickBooks-ready import file.
+
+------------------------------------------------------------------------
+8. System Settings & Branding
+========================================================================
+Log in as Admin:
+1. Branding:
+   - Filament top navigation header displays the configured brand name "JNC GreaseCycling" instead of the default Laravel brand.
+2. Go to "System" > "Settings" (relocated to System sidebar group):
+   - Edit the Default Reimbursement Rate (e.g. 0.08) and Payout Frequency (Quarterly).
+   - Click Save Settings. Verify the settings update in the database.
+
+------------------------------------------------------------------------
+9. CSV Data Portability
+------------------------------------------------------------------------
+1. Customers CSV Import/Export:
+   - In "Customers" list, click "Export to CSV" to download the current database records.
+   - Click "Import from CSV". Read the guidelines details placeholder showing required fields:
+     `Name (Required), Contact Name, Phone, Email, Billing Address, Notes, Status (lead, active, cancelled)`
+   - Upload file and verify records populate in the grid.
+2. Locations CSV Import/Export:
+   - In "Locations" list, click "Export to CSV".
+   - Click "Import from CSV". Read the instructions placeholder detailing format:
+     `Customer Name (Required), Location Name (Required), Service Address, Service Frequency, Reimbursement Rate, Status, Default Route Name`
+   - Upload file and verify records link to customers, parse rates, and map routes automatically.
+
+------------------------------------------------------------------------
+10. Automated Tests
+------------------------------------------------------------------------
+To run the full test suite verifying database logic, route scheduling rules, role policies, payout math, and CSV uploads:
+Open a terminal in the root directory and run:
+
+php artisan test
+
+Expected output:
+Tests:    55 passed (221 assertions)
+Duration: ~25s
+========================================================================

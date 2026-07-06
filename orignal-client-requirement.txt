@@ -1,0 +1,227 @@
+JNC GreaseCycling – Route System Requirements (Simplified Version)
+
+1. Overview
+
+We need a custom system that manages:
+	•	Customers & restaurant locations
+	•	Containers
+	•	Routes and schedules
+	•	Drivers logging pickups
+	•	Payout calculations (based on pounds collected)
+
+The focus is efficiency—fast to use, simple to train drivers on, and powerful for operations.
+
+⸻
+
+2. User Roles
+
+Admin (Owner)
+	•	Full access to everything.
+	•	Add/remove users, view all data.
+
+Dispatcher / Operations
+	•	Manage routes, customers, pickups.
+	•	No system settings.
+
+Driver
+	•	Mobile access only.
+	•	See assigned route + log pickup info.
+
+Accounting
+	•	Read-only access to payouts & pickup history.
+
+⸻
+
+3. Data Structure
+
+3.1 Customer
+	•	Customer name
+	•	Contact name
+	•	Phone, email
+	•	Billing address
+	•	Notes
+	•	Status: Lead / Active / Cancelled
+	•	Optional: upload contract or termination invoice
+
+3.2 Location (Restaurant Site)
+	•	Location name
+	•	Linked customer
+	•	Service address (with map link)
+	•	Service frequency (weekly, biweekly, monthly, on-call)
+	•	Standard reimbursement rate (per pound)
+	•	Special instructions (gate code, back door pickup, etc.)
+	•	Status: Active / Paused / Cancelled
+	•	Assigned default route/day
+
+3.3 Container (Simple)
+	•	Linked location
+	•	Container type (drum, tank, other)
+	•	Capacity
+	•	Date placed
+	•	Date removed (if applicable)
+
+3.4 Route
+	•	Route name (e.g., Monday North)
+	•	Service day(s)
+	•	Assigned driver
+	•	Stop order
+
+3.5 Route Stop
+	•	Linked location
+	•	Position/order #
+	•	Active/inactive flag
+
+3.6 Pickup Event
+
+Every time a driver services a location:
+	•	Date & time
+	•	Driver
+	•	Location
+	•	Route
+	•	Pounds collected
+	•	Notes (optional)
+	•	Status: Completed / Skipped (skip reason required)
+
+3.7 Payout Record
+
+To calculate what we owe restaurants:
+	•	Customer
+	•	Date range
+	•	Linked locations
+	•	Total pounds collected
+	•	Reimbursement rate
+	•	Total amount owed
+	•	Paid? (yes/no)
+	•	Payment method
+	•	Notes
+
+⸻
+
+4. Core Features
+
+4.1 Customer & Location Management
+	•	Add/edit customers & locations
+	•	Assign service frequency
+	•	Assign reimbursement rates
+	•	Store special instructions
+	•	Mark location as active/paused/cancelled
+	•	Attach contract/termination invoice (optional)
+
+⸻
+
+4.2 Route Management
+	•	Create weekly routes (Mon–Sun)
+	•	Assign locations to each route
+	•	Drag-and-drop stop order
+	•	Daily auto-generated route list based on:
+	•	Assigned route
+	•	Service frequency
+	•	Last pickup date
+
+Dispatcher can also:
+	•	Skip a stop for a specific day
+	•	Add an emergency “one-time stop”
+
+⸻
+
+4.3 Driver App (Simple + Fast)
+
+Driver logs in and sees that day’s route only.
+
+Driver can:
+	•	View stop list in order
+	•	Tap a stop to see:
+	•	Address + “Open in Maps”
+	•	Instructions
+	•	Service notes from customer
+	•	Log pickup:
+	•	Pounds collected
+	•	Notes (optional)
+	•	Status:
+	•	Completed
+	•	Skipped → choose reason (closed, no access, etc.)
+
+Route completion:
+	•	Driver marks entire route as done
+	•	System timestamps start/end time automatically
+
+⸻
+
+4.4 Dispatch Dashboard
+
+For each day:
+	•	All routes
+	•	Assigned driver
+	•	Number of stops
+	•	Live statuses:
+	•	Not started
+	•	In progress
+	•	Completed
+	•	Per-stop status:
+	•	Pending
+	•	Completed
+	•	Skipped
+
+Dispatcher can:
+	•	Reassign stops
+	•	Add/delete a stop
+	•	Mark a stop complete manually if needed
+
+⸻
+
+4.5 Pickup History & Reporting
+
+By Location:
+	•	All pickups by date
+	•	Pounds collected
+	•	Skip logs
+	•	Average pounds per pickup
+	•	Time since last service
+
+For the whole business:
+	•	Total pounds collected by:
+	•	Date range
+	•	Driver
+	•	Route
+	•	Customer group
+	•	Skipped stop report
+
+⸻
+
+4.6 Payout Calculation
+
+For a customer or a specific location, choose a date range and system will:
+	•	Sum total pounds
+	•	Multiply by reimbursement rate
+	•	Generate total owed
+
+User can save:
+	•	Paid? (yes/no)
+	•	Date paid
+	•	Payment method (check, ACH, etc.)
+	•	Notes
+
+Also export to:
+	•	CSV / Excel for QuickBooks
+
+⸻
+
+5. Additional System Settings
+	•	Default reimbursement rate
+	•	Default payout frequency (quarterly)
+	•	Manage user access
+	•	Import/export CSV for:
+	•	Customers
+	•	Locations
+	•	Routes
+	•	Pickups
+
+⸻
+
+6. Non-Functional Requirements
+	•	Simple mobile interface for drivers
+	•	Responsive web app
+	•	Secure login
+	•	Access-based permissions
+	•	Fast filtering/search
+	•	Data export & backup

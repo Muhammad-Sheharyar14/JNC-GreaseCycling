@@ -1,0 +1,54 @@
+========================================================================
+             JNC GREASECYCLING - DRIVER NATIVE ANDROID BUILD HELP
+========================================================================
+
+Follow these quick commands in sequence to bundle the Vue 3 driver app 
+into a native Android installer file (.apk).
+
+------------------------------------------------------------------------
+Quick Start CLI Commands
+------------------------------------------------------------------------
+Open a terminal in the "driver-app" directory (not the root directory):
+
+1. Install Capacitor packages:
+   npm install @capacitor/core @capacitor/cli
+
+2. Initialize Capacitor:
+   npx cap init "JNC GreaseCycling" "com.greasecycling.driver" --web-dir=dist
+
+3. Install and Add Android:
+   npm install @capacitor/android
+   npx cap add android
+
+4. Compile the latest Vue build and copy it to the Android project:
+   npm run build
+   npx cap sync
+
+5. Launch Android Studio with the project loaded:
+   npx cap open android
+
+------------------------------------------------------------------------
+Permission Configurations (Required for GPS)
+------------------------------------------------------------------------
+Before compiling your APK inside Android Studio, open the file:
+android/app/src/main/AndroidManifest.xml
+
+Add these lines to allow the app to access coordinates for distance 
+estimates and check connectivity state:
+
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-feature android:name="android.hardware.location.gps" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.INTERNET" />
+
+------------------------------------------------------------------------
+Compiling the APK
+------------------------------------------------------------------------
+In Android Studio:
+- Wait for Gradle configuration to finish sync.
+- Go to the menu: Build -> Build Bundle(s) / APK(s) -> Build APK(s).
+- Click the "Locate" link in the bottom-right notification popup 
+  once completed to find the debug "app-debug.apk" file.
+- Send this .apk file to your Android phone to install and test.
+========================================================================
