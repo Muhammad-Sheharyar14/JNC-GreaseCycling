@@ -299,6 +299,9 @@ const driverCoordinates = computed(() => {
 
 // Map and Recenter follow modes
 const isFollowing = ref(true);
+const previousLat = ref(null);
+const previousLng = ref(null);
+const currentHeading = ref(0);
 
 const toggleFollowMode = () => {
   isFollowing.value = !isFollowing.value;
@@ -310,8 +313,25 @@ const toggleFollowMode = () => {
 const recenterMapOnDriver = () => {
   if (map.value && currentLat.value !== null && currentLng.value !== null) {
     map.value.setCenter({ lat: currentLat.value, lng: currentLng.value });
-    map.value.setZoom(16);
+    map.value.setZoom(17); // Premium navigation zoom
+    map.value.setTilt(45); // 3D Perspective angle like Google Maps
+    if (currentHeading.value !== null && !isNaN(currentHeading.value)) {
+      map.value.setHeading(currentHeading.value); // Rotate map viewport towards direction of travel
+    }
   }
+};
+
+const calculateBearing = (lat1, lng1, lat2, lng2) => {
+  const dLon = (lng2 - lng1) * Math.PI / 180;
+  const lat1Rad = lat1 * Math.PI / 180;
+  const lat2Rad = lat2 * Math.PI / 180;
+  
+  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+            Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+            
+  const brng = Math.atan2(y, x) * 180 / Math.PI;
+  return (brng + 360) % 360;
 };
 
 // Google Map canvas rendering & routing
@@ -353,7 +373,10 @@ const setupMap = () => {
 
   map.value = new google.maps.Map(mapElement, {
     center: defaultCenter,
-    zoom: 14,
+    zoom: 17,
+    mapId: 'DEMO_MAP_ID', // Enables vector maps (tilt & heading support)
+    heading: currentHeading.value,
+    tilt: 45,
     disableDefaultUI: false,
     zoomControl: true,
     gestureHandling: 'greedy', // Greedy gesture handling makes map dragging & zooming super smooth on mobile
@@ -406,19 +429,24 @@ const updateDriverMarkerAndRoute = () => {
 
     if (driverMarker.value) {
       driverMarker.value.setPosition(driverPos);
+      const icon = driverMarker.value.getIcon();
+      if (icon) {
+        icon.rotation = currentHeading.value || 0;
+        driverMarker.value.setIcon(icon);
+      }
     } else {
       driverMarker.value = new google.maps.Marker({
         position: driverPos,
         map: map.value,
         title: 'Your Location',
         icon: {
-          path: 'M23.5 17h-1.5v-3.5c0-1.4-1.1-2.5-2.5-2.5h-9c-1.4 0-2.5 1.1-2.5 2.5v3.5h-1.5c-.8 0-1.5.7-1.5 1.5v3c0 .8.7 1.5 1.5 1.5h18c.8 0 1.5-.7 1.5-1.5v-3c0-.8-.7-1.5-1.5-1.5zm-12.5-3.5c0-.3.2-.5.5-.5h2.5v3h-3v-2.5zm5 0h2.5c.3 0 .5.2.5.5v2.5h-3v-3zm-9 9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm13 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z',
-          fillColor: '#10b981',
+          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+          scale: 6,
+          fillColor: '#3b82f6', // Navigation blue arrow
           fillOpacity: 1,
           strokeColor: '#ffffff',
-          strokeWeight: 1,
-          scale: 1.2,
-          anchor: new google.maps.Point(12, 12)
+          strokeWeight: 2,
+          rotation: currentHeading.value || 0
         }
       });
     }
@@ -459,9 +487,28 @@ const startWatchingLocation = () => {
   if (navigator.geolocation) {
     watchId.value = navigator.geolocation.watchPosition(
       (position) => {
+        let headingVal = position.coords.heading;
+        if (headingVal === null || isNaN(headingVal)) {
+          if (currentLat.value !== null && currentLng.value !== null) {
+            // Compute bearing between updates
+            headingVal = calculateBearing(
+              currentLat.value,
+              currentLng.value,
+              position.coords.latitude,
+              position.coords.longitude
+            );
+          }
+        }
+
+        if (headingVal !== null && !isNaN(headingVal)) {
+          currentHeading.value = headingVal;
+        }
+
+        previousLat.value = currentLat.value;
+        previousLng.value = currentLng.value;
         currentLat.value = position.coords.latitude;
         currentLng.value = position.coords.longitude;
-        console.log('Driver location tracked:', currentLat.value, currentLng.value);
+        console.log('Driver location tracked:', currentLat.value, currentLng.value, 'Heading:', currentHeading.value);
       },
       (error) => {
         console.warn('Geolocation access failed:', error);
@@ -841,5 +888,11 @@ onUnmounted(() => {
   font-family: monospace;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+@media (max-width: 767px) {
+  .map-container {
+    height: 480px !important;
+  }
 }
 </style>
