@@ -70,8 +70,17 @@
               OPEN IN MAPS <span class="arrow">↗</span>
             </a>
           </div>
-          <div class="map-container" style="position: relative; height: 250px;">
-            <div id="stop-route-map" style="width: 100%; height: 100%; min-height: 250px; border-radius: var(--border-radius-md);"></div>
+          <div class="map-container" style="position: relative; height: 380px;">
+            <div id="stop-route-map" style="width: 100%; height: 100%; min-height: 380px; border-radius: var(--border-radius-md);"></div>
+            <button 
+              @click="toggleFollowMode" 
+              :class="['btn-recenter', { 'active': isFollowing }]"
+              title="Recenter on Location"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.51-4.38-4.06-7.93-8.44-8.44V1h-2v1.56C6.12 3.07 2.57 6.62 2.06 11H0v2h2.06c.51 4.38 4.06 7.93 8.44 8.44V23h-2v-1.56c4.38-.51 7.93-4.06 8.44-8.44H24v-2h-3.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+              </svg>
+            </button>
           </div>
           
           <!-- Map Stats overlay block -->
@@ -288,6 +297,23 @@ const driverCoordinates = computed(() => {
   return 'Acquiring GPS...';
 });
 
+// Map and Recenter follow modes
+const isFollowing = ref(true);
+
+const toggleFollowMode = () => {
+  isFollowing.value = !isFollowing.value;
+  if (isFollowing.value) {
+    recenterMapOnDriver();
+  }
+};
+
+const recenterMapOnDriver = () => {
+  if (map.value && currentLat.value !== null && currentLng.value !== null) {
+    map.value.setCenter({ lat: currentLat.value, lng: currentLng.value });
+    map.value.setZoom(16);
+  }
+};
+
 // Google Map canvas rendering & routing
 const initGoogleMap = () => {
   const checkGoogle = setInterval(async () => {
@@ -328,17 +354,23 @@ const setupMap = () => {
   map.value = new google.maps.Map(mapElement, {
     center: defaultCenter,
     zoom: 14,
-    disableDefaultUI: true,
+    disableDefaultUI: false,
     zoomControl: true,
+    gestureHandling: 'greedy', // Greedy gesture handling makes map dragging & zooming super smooth on mobile
+  });
+
+  map.value.addListener('dragstart', () => {
+    isFollowing.value = false;
   });
 
   directionsService.value = new google.maps.DirectionsService();
   directionsRenderer.value = new google.maps.DirectionsRenderer({
     map: map.value,
     suppressMarkers: true,
+    preserveViewport: true, // Prevents directionsRenderer from forcing zooms that override user/follow camera
     polylineOptions: {
       strokeColor: '#f59e0b',
-      strokeWeight: 5,
+      strokeWeight: 6,
       strokeOpacity: 0.8
     }
   });
@@ -417,6 +449,9 @@ const updateDriverMarkerAndRoute = () => {
 
 watch([currentLat, currentLng], () => {
   updateDriverMarkerAndRoute();
+  if (isFollowing.value) {
+    recenterMapOnDriver();
+  }
 });
 
 // Geolocation watchers
@@ -708,12 +743,34 @@ onUnmounted(() => {
   border: 1px solid var(--border-glass);
 }
 
-.dark-map-iframe {
-  width: 100%;
-  height: 250px;
-  border: 0;
-  display: block;
-  filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%);
+.btn-recenter {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-recenter:hover {
+  background: rgba(30, 41, 59, 1);
+  color: #ffffff;
+}
+
+.btn-recenter.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #60a5fa;
 }
 
 .card-divider {
