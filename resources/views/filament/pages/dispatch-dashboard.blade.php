@@ -344,8 +344,9 @@
                         class="op-card mb-6" 
                         style="padding: 0; overflow: hidden; height: 380px; border-radius: 0.75rem; border: 1px solid #e2e8f0; position: relative;"
                         wire:key="map-container-{{ $selectedRouteId }}"
+                        wire:ignore
                     >
-                        <div id="live-tracking-map" style="width: 100%; height: 100%; min-height: 380px;"></div>
+                        <div id="live-tracking-map" style="width: 100%; height: 100%; min-height: 380px;" wire:ignore></div>
                     </div>
 
                     <div class="op-card" style="padding: 1.5rem;">
