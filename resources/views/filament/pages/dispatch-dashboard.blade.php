@@ -338,7 +338,7 @@
                     <div 
                         x-data="dispatchMap({
                             locations: {{ json_encode($this->getDriverLocations()) }},
-                            stops: {{ json_encode($this->stops->map(fn($s) => ['lat' => (float)$s->location->latitude, 'lng' => (float)$s->location->longitude, 'name' => $s->location->name, 'pos' => $s->position])) }}
+                            stops: {{ json_encode($this->stops->map(fn($s) => ['address' => $s->location->service_address, 'map_link' => $s->location->map_link, 'name' => $s->location->name, 'pos' => $s->position])) }}
                         })"
                         x-init="initMap()"
                         class="op-card mb-6" 
@@ -501,52 +501,115 @@
                 
                 this.plotStops();
                 this.plotDrivers();
-                this.fitBounds();
 
                 window.addEventListener('driver-locations-updated', (event) => {
                     this.updateDrivers(event.detail.locations);
                 });
             },
 
+            parseCoords(mapLink) {
+                if (!mapLink) return null;
+                const queryPattern = /[?&](query|q)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+                const matchQuery = mapLink.match(queryPattern);
+                if (matchQuery) {
+                    return { lat: parseFloat(matchQuery[2]), lng: parseFloat(matchQuery[3]) };
+                }
+                const atPattern = /@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+                const matchAt = mapLink.match(atPattern);
+                if (matchAt) {
+                    return { lat: parseFloat(matchAt[1]), lng: parseFloat(matchAt[2]) };
+                }
+                return null;
+            },
+
             plotStops() {
                 const pathCoordinates = [];
+                const bounds = new google.maps.LatLngBounds();
+                const geocoder = new google.maps.Geocoder();
+                const stopsCount = this.config.stops.length;
+                let processedStops = 0;
+
+                const drawPath = () => {
+                    if (pathCoordinates.length > 1) {
+                        pathCoordinates.sort((a, b) => a.pos - b.pos);
+                        
+                        if (this.routePolyline) {
+                            this.routePolyline.setMap(null);
+                        }
+
+                        this.routePolyline = new google.maps.Polyline({
+                            path: pathCoordinates.map(p => ({ lat: p.lat, lng: p.lng })),
+                            geodesic: true,
+                            strokeColor: '#f59e0b',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 4,
+                            map: this.map
+                        });
+                    }
+                    this.fitBounds(bounds);
+                };
+
+                if (stopsCount === 0) {
+                    this.fitBounds(bounds);
+                    return;
+                }
 
                 this.config.stops.forEach((stop) => {
-                    const position = { lat: stop.lat, lng: stop.lng };
-                    pathCoordinates.push(position);
+                    const addMarker = (coords) => {
+                        const position = { lat: coords.lat, lng: coords.lng };
+                        bounds.extend(position);
+                        pathCoordinates.push({ pos: stop.pos, lat: coords.lat, lng: coords.lng });
 
-                    const marker = new google.maps.Marker({
-                        position: position,
-                        map: this.map,
-                        title: `${stop.pos}. ${stop.name}`,
-                        label: {
-                            text: String(stop.pos),
-                            color: 'white',
-                            fontWeight: 'bold'
-                        },
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            fillColor: '#f59e0b',
-                            fillOpacity: 1,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 2,
-                            scale: 14,
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: this.map,
+                            title: `${stop.pos}. ${stop.name}`,
+                            label: {
+                                text: String(stop.pos),
+                                color: 'white',
+                                fontWeight: 'bold'
+                            },
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                fillColor: '#f59e0b',
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 2,
+                                scale: 14,
+                            }
+                        });
+
+                        this.markers[stop.pos] = marker;
+
+                        processedStops++;
+                        if (processedStops === stopsCount) {
+                            drawPath();
                         }
-                    });
+                    };
 
-                    this.markers[stop.pos] = marker;
+                    const parsed = this.parseCoords(stop.map_link);
+                    if (parsed) {
+                        addMarker(parsed);
+                    } else if (stop.address) {
+                        geocoder.geocode({ address: stop.address }, (results, status) => {
+                            if (status === 'OK' && results[0] && results[0].geometry) {
+                                const location = results[0].geometry.location;
+                                addMarker({ lat: location.lat(), lng: location.lng() });
+                            } else {
+                                console.warn(`Geocoding failed for address "${stop.address}" with status: ${status}`);
+                                processedStops++;
+                                if (processedStops === stopsCount) {
+                                    drawPath();
+                                }
+                            }
+                        });
+                    } else {
+                        processedStops++;
+                        if (processedStops === stopsCount) {
+                            drawPath();
+                        }
+                    }
                 });
-
-                if (pathCoordinates.length > 1) {
-                    this.routePolyline = new google.maps.Polyline({
-                        path: pathCoordinates,
-                        geodesic: true,
-                        strokeColor: '#f59e0b',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 4,
-                        map: this.map
-                    });
-                }
             },
 
             plotDrivers() {
@@ -596,19 +659,27 @@
                 locations.forEach((loc) => {
                     this.createOrUpdateDriverMarker(loc);
                 });
+                this.fitBounds();
             },
 
-            fitBounds() {
-                const bounds = new google.maps.LatLngBounds();
+            fitBounds(stopsBounds) {
+                const bounds = stopsBounds || new google.maps.LatLngBounds();
                 let hasPoints = false;
 
-                this.config.stops.forEach((stop) => {
-                    bounds.extend({ lat: stop.lat, lng: stop.lng });
+                if (stopsBounds) {
                     hasPoints = true;
-                });
+                } else {
+                    this.config.stops.forEach((stop) => {
+                        const parsed = this.parseCoords(stop.map_link);
+                        if (parsed) {
+                            bounds.extend(parsed);
+                            hasPoints = true;
+                        }
+                    });
+                }
 
-                this.config.locations.forEach((loc) => {
-                    bounds.extend({ lat: loc.latitude, lng: loc.longitude });
+                Object.values(this.driverMarkers).forEach((marker) => {
+                    bounds.extend(marker.getPosition());
                     hasPoints = true;
                 });
 
