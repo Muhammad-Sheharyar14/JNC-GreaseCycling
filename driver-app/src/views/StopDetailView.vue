@@ -70,15 +70,8 @@
               OPEN IN MAPS <span class="arrow">↗</span>
             </a>
           </div>
-          <div class="map-container">
-            <iframe
-              width="100%"
-              height="250"
-              frameborder="0"
-              class="dark-map-iframe"
-              :src="mapEmbedUrl"
-              allowfullscreen
-            ></iframe>
+          <div class="map-container" style="position: relative; height: 250px;">
+            <div id="stop-route-map" style="width: 100%; height: 100%; min-height: 250px; border-radius: var(--border-radius-md);"></div>
           </div>
           
           <!-- Map Stats overlay block -->
@@ -137,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRouteStore } from '../stores/route';
 
@@ -157,6 +150,32 @@ const watchId = ref(null);
 // Geocoded target coordinates
 const locationLat = ref(null);
 const locationLng = ref(null);
+
+// Map and Routing refs
+const map = ref(null);
+const driverMarker = ref(null);
+const stopMarker = ref(null);
+const directionsRenderer = ref(null);
+const directionsService = ref(null);
+
+// Directions measurements from Google
+const googleDistance = ref(null);
+const googleDuration = ref(null);
+
+const parseCoords = (mapLink) => {
+  if (!mapLink) return null;
+  const queryPattern = /[?&](query|q)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+  const matchQuery = mapLink.match(queryPattern);
+  if (matchQuery) {
+    return { lat: parseFloat(matchQuery[2]), lng: parseFloat(matchQuery[3]) };
+  }
+  const atPattern = /@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+  const matchAt = mapLink.match(atPattern);
+  if (matchAt) {
+    return { lat: parseFloat(matchAt[1]), lng: parseFloat(matchAt[2]) };
+  }
+  return null;
+};
 
 const geocodeAddress = async (address) => {
   if (!address) return;
@@ -188,21 +207,11 @@ const googleMapsUrl = computed(() => {
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
 });
 
-const mapEmbedUrl = computed(() => {
-  if (!stop.value?.location) return '';
-  const loc = stop.value.location;
-  if (loc.latitude && loc.longitude) {
-    return `https://maps.google.com/maps?q=${loc.latitude},${loc.longitude}&z=15&output=embed`;
-  }
-  const query = encodeURIComponent(loc.service_address);
-  return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
-});
-
 const isRouteActive = computed(() => {
   return routeStore.routeRun?.status === 'in_progress';
 });
 
-// Haversine formula to compute great-circle distance in miles
+// Haversine formula to compute great-circle distance in miles (fallback)
 const calculateHaversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 3958.8; // Earth radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -235,12 +244,14 @@ const computedDistance = computed(() => {
 });
 
 const distanceRemaining = computed(() => {
+  if (googleDistance.value) {
+    return googleDistance.value;
+  }
   const dist = computedDistance.value;
   if (dist !== null) {
     return `${dist.toFixed(1)} miles`;
   }
   
-  // Fallback: dynamic stop-position calculation
   const pos = stop.value?.position || 1;
   const fallbackDist = 0.8 + (pos - 1) * 1.5;
   return `${fallbackDist.toFixed(1)} miles`;
@@ -248,24 +259,28 @@ const distanceRemaining = computed(() => {
 
 // Compute dynamic estimated arrival
 const estimatedArrival = computed(() => {
-  const dist = computedDistance.value;
   const date = new Date();
   
-  if (dist !== null) {
-    if (dist > 200) {
-      return 'N/A (Too far)';
-    }
-    // Estimate travel time: assume average speed of 25 mph + 2 minutes buffer
-    const travelTimeMinutes = Math.round((dist / 25) * 60) + 2;
-    date.setMinutes(date.getMinutes() + travelTimeMinutes);
+  if (googleDuration.value) {
+    let durationMinutes = 5;
+    const minutesMatch = googleDuration.value.match(/(\d+)\s*min/);
+    const hoursMatch = googleDuration.value.match(/(\d+)\s*hour/);
+    if (minutesMatch) durationMinutes = parseInt(minutesMatch[1]);
+    if (hoursMatch) durationMinutes += parseInt(hoursMatch[1]) * 60;
+    
+    date.setMinutes(date.getMinutes() + durationMinutes);
   } else {
-    // Fallback: estimate time based on stop position
-    const pos = stop.value?.position || 1;
-    const fallbackMinutes = 15 + (pos - 1) * 20;
-    date.setMinutes(date.getMinutes() + fallbackMinutes);
+    const dist = computedDistance.value;
+    if (dist !== null) {
+      const travelTimeMinutes = Math.round((dist / 25) * 60) + 2;
+      date.setMinutes(date.getMinutes() + travelTimeMinutes);
+    } else {
+      const pos = stop.value?.position || 1;
+      const fallbackMinutes = 15 + (pos - 1) * 20;
+      date.setMinutes(date.getMinutes() + fallbackMinutes);
+    }
   }
   
-  // Format as hh:mm EST
   const hh = String(date.getHours()).padStart(2, '0');
   const mm = String(date.getMinutes()).padStart(2, '0');
   return `${hh}:${mm} EST`;
@@ -278,6 +293,122 @@ const driverCoordinates = computed(() => {
   return 'Acquiring GPS...';
 });
 
+// Google Map canvas rendering & routing
+const initGoogleMap = () => {
+  const checkGoogle = setInterval(() => {
+    if (window.google && window.google.maps) {
+      clearInterval(checkGoogle);
+      setupMap();
+    }
+  }, 100);
+};
+
+const setupMap = () => {
+  const mapElement = document.getElementById('stop-route-map');
+  if (!mapElement) return;
+
+  const loc = stop.value?.location;
+  const targetLat = loc?.latitude ? parseFloat(loc.latitude) : locationLat.value;
+  const targetLng = loc?.longitude ? parseFloat(loc.longitude) : locationLng.value;
+
+  const defaultCenter = (targetLat && targetLng) 
+    ? { lat: targetLat, lng: targetLng } 
+    : { lat: 31.5204, lng: 74.3587 };
+
+  map.value = new google.maps.Map(mapElement, {
+    center: defaultCenter,
+    zoom: 14,
+    disableDefaultUI: true,
+    zoomControl: true,
+  });
+
+  directionsService.value = new google.maps.DirectionsService();
+  directionsRenderer.value = new google.maps.DirectionsRenderer({
+    map: map.value,
+    suppressMarkers: true,
+    polylineOptions: {
+      strokeColor: '#f59e0b',
+      strokeWeight: 5,
+      strokeOpacity: 0.8
+    }
+  });
+
+  if (targetLat && targetLng) {
+    stopMarker.value = new google.maps.Marker({
+      position: { lat: targetLat, lng: targetLng },
+      map: map.value,
+      title: loc?.name || 'Stop Location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: '#f59e0b',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2,
+        scale: 12,
+      }
+    });
+  }
+
+  updateDriverMarkerAndRoute();
+};
+
+const updateDriverMarkerAndRoute = () => {
+  if (!map.value) return;
+
+  const loc = stop.value?.location;
+  const targetLat = loc?.latitude ? parseFloat(loc.latitude) : locationLat.value;
+  const targetLng = loc?.longitude ? parseFloat(loc.longitude) : locationLng.value;
+
+  if (currentLat.value !== null && currentLng.value !== null) {
+    const driverPos = { lat: currentLat.value, lng: currentLng.value };
+
+    if (driverMarker.value) {
+      driverMarker.value.setPosition(driverPos);
+    } else {
+      driverMarker.value = new google.maps.Marker({
+        position: driverPos,
+        map: map.value,
+        title: 'Your Location',
+        icon: {
+          path: 'M23.5 17h-1.5v-3.5c0-1.4-1.1-2.5-2.5-2.5h-9c-1.4 0-2.5 1.1-2.5 2.5v3.5h-1.5c-.8 0-1.5.7-1.5 1.5v3c0 .8.7 1.5 1.5 1.5h18c.8 0 1.5-.7 1.5-1.5v-3c0-.8-.7-1.5-1.5-1.5zm-12.5-3.5c0-.3.2-.5.5-.5h2.5v3h-3v-2.5zm5 0h2.5c.3 0 .5.2.5.5v2.5h-3v-3zm-9 9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm13 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z',
+          fillColor: '#10b981',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 1,
+          scale: 1.2,
+          anchor: new google.maps.Point(12, 12)
+        }
+      });
+    }
+
+    if (targetLat && targetLng && directionsService.value && directionsRenderer.value) {
+      directionsService.value.route(
+        {
+          origin: driverPos,
+          destination: { lat: targetLat, lng: targetLng },
+          travelMode: google.maps.TravelMode.DRIVING
+        },
+        (result, status) => {
+          if (status === google.maps.DirectionsStatus.OK) {
+            directionsRenderer.value.setDirections(result);
+            const leg = result.routes[0].legs[0];
+            if (leg) {
+              googleDistance.value = leg.distance.text;
+              googleDuration.value = leg.duration.text;
+            }
+          } else {
+            console.warn('Google Directions request failed status:', status);
+          }
+        }
+      );
+    }
+  }
+};
+
+watch(() => [currentLat.value, currentLng.value], () => {
+  updateDriverMarkerAndRoute();
+});
+
 // Geolocation watchers
 const startWatchingLocation = () => {
   if (navigator.geolocation) {
@@ -285,6 +416,7 @@ const startWatchingLocation = () => {
       (position) => {
         currentLat.value = position.coords.latitude;
         currentLng.value = position.coords.longitude;
+        console.log('Driver location tracked:', currentLat.value, currentLng.value);
       },
       (error) => {
         console.warn('Geolocation access failed:', error);
@@ -324,8 +456,18 @@ const loadStop = async () => {
   error.value = '';
   try {
     stop.value = await routeStore.fetchStopDetail(route.params.id);
-    if (stop.value?.location?.service_address) {
-      geocodeAddress(stop.value.location.service_address);
+    
+    // Parse coordinates from map_link first
+    const parsed = parseCoords(stop.value?.location?.map_link);
+    if (parsed) {
+      locationLat.value = parsed.lat;
+      locationLng.value = parsed.lng;
+      initGoogleMap();
+    } else if (stop.value?.location?.service_address) {
+      await geocodeAddress(stop.value.location.service_address);
+      initGoogleMap();
+    } else {
+      initGoogleMap();
     }
   } catch (err) {
     error.value = 'Failed to load stop details.';

@@ -338,7 +338,7 @@
                     <div 
                         x-data="dispatchMap({
                             locations: {{ json_encode($this->getDriverLocations()) }},
-                            stops: {{ json_encode($this->stops->map(fn($s) => ['address' => $s->location->service_address, 'map_link' => $s->location->map_link, 'name' => $s->location->name, 'pos' => $s->position])) }}
+                            stops: {{ json_encode($this->stops->map(fn($s) => ['address' => $s->location->service_address, 'map_link' => $s->location->map_link, 'name' => $s->location->name, 'pos' => $s->position, 'status' => $s->status])) }}
                         })"
                         x-init="initMap()"
                         class="op-card mb-6" 
@@ -560,10 +560,17 @@
                         bounds.extend(position);
                         pathCoordinates.push({ pos: stop.pos, lat: coords.lat, lng: coords.lng });
 
+                        let markerColor = '#f59e0b'; // Default: Pending (Amber)
+                        if (stop.status === 'completed') {
+                            markerColor = '#10b981'; // Completed (Green)
+                        } else if (stop.status === 'skipped') {
+                            markerColor = '#ef4444'; // Skipped (Red)
+                        }
+
                         const marker = new google.maps.Marker({
                             position: position,
                             map: this.map,
-                            title: `${stop.pos}. ${stop.name}`,
+                            title: `${stop.pos}. ${stop.name} (${stop.status})`,
                             label: {
                                 text: String(stop.pos),
                                 color: 'white',
@@ -571,7 +578,7 @@
                             },
                             icon: {
                                 path: google.maps.SymbolPath.CIRCLE,
-                                fillColor: '#f59e0b',
+                                fillColor: markerColor,
                                 fillOpacity: 1,
                                 strokeColor: '#ffffff',
                                 strokeWeight: 2,
