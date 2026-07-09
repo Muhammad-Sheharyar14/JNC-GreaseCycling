@@ -177,25 +177,20 @@ const parseCoords = (mapLink) => {
   return null;
 };
 
-const geocodeAddress = async (address) => {
-  if (!address) return;
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'JNC-GreaseCycling-DriverApp/1.0'
-        }
+const geocodeAddress = (address) => {
+  if (!address) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: address }, (results, status) => {
+      if (status === 'OK' && results[0] && results[0].geometry) {
+        const location = results[0].geometry.location;
+        resolve({ lat: location.lat(), lng: location.lng() });
+      } else {
+        console.warn('Google Geocoding failed:', status);
+        resolve(null);
       }
-    );
-    const data = await response.json();
-    if (data && data.length > 0) {
-      locationLat.value = parseFloat(data[0].lat);
-      locationLng.value = parseFloat(data[0].lon);
-    }
-  } catch (err) {
-    console.warn('Geocoding failed:', err);
-  }
+    });
+  });
 };
 
 const googleMapsUrl = computed(() => {
@@ -295,9 +290,24 @@ const driverCoordinates = computed(() => {
 
 // Google Map canvas rendering & routing
 const initGoogleMap = () => {
-  const checkGoogle = setInterval(() => {
+  const checkGoogle = setInterval(async () => {
     if (window.google && window.google.maps) {
       clearInterval(checkGoogle);
+
+      // Resolve target coordinates using Google Geocoder if not parsed
+      const loc = stop.value?.location;
+      const parsed = parseCoords(loc?.map_link);
+      if (parsed) {
+        locationLat.value = parsed.lat;
+        locationLng.value = parsed.lng;
+      } else if (loc?.service_address && (locationLat.value === null || locationLng.value === null)) {
+        const coords = await geocodeAddress(loc.service_address);
+        if (coords) {
+          locationLat.value = coords.lat;
+          locationLng.value = coords.lng;
+        }
+      }
+
       setupMap();
     }
   }, 100);
@@ -405,7 +415,7 @@ const updateDriverMarkerAndRoute = () => {
   }
 };
 
-watch(() => [currentLat.value, currentLng.value], () => {
+watch([currentLat, currentLng], () => {
   updateDriverMarkerAndRoute();
 });
 
@@ -456,19 +466,7 @@ const loadStop = async () => {
   error.value = '';
   try {
     stop.value = await routeStore.fetchStopDetail(route.params.id);
-    
-    // Parse coordinates from map_link first
-    const parsed = parseCoords(stop.value?.location?.map_link);
-    if (parsed) {
-      locationLat.value = parsed.lat;
-      locationLng.value = parsed.lng;
-      initGoogleMap();
-    } else if (stop.value?.location?.service_address) {
-      await geocodeAddress(stop.value.location.service_address);
-      initGoogleMap();
-    } else {
-      initGoogleMap();
-    }
+    initGoogleMap();
   } catch (err) {
     error.value = 'Failed to load stop details.';
   } finally {
