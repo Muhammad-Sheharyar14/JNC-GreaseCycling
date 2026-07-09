@@ -243,6 +243,7 @@
     </style>
 
     <div class="op-container">
+        <div wire:poll.10s="refreshLocations" style="display: none;"></div>
         <!-- Date Selector panel -->
         <div class="op-card op-header-bar">
             <div>
@@ -333,6 +334,20 @@
                         <p style="font-size: 0.85rem; max-w: 380px; margin: 0 auto;">Click on an active route from the left panel to inspect its stop details and execute management actions.</p>
                     </div>
                 @else
+                    <!-- Live Tracking Map -->
+                    <div 
+                        x-data="dispatchMap({
+                            locations: {{ json_encode($this->getDriverLocations()) }},
+                            stops: {{ json_encode($this->stops->map(fn($s) => ['lat' => (float)$s->location->latitude, 'lng' => (float)$s->location->longitude, 'name' => $s->location->name, 'pos' => $s->position])) }}
+                        })"
+                        x-init="initMap()"
+                        class="op-card mb-6" 
+                        style="padding: 0; overflow: hidden; height: 380px; border-radius: 0.75rem; border: 1px solid #e2e8f0; position: relative;"
+                        wire:key="map-container-{{ $selectedRouteId }}"
+                    >
+                        <div id="live-tracking-map" style="width: 100%; height: 100%; min-height: 380px;"></div>
+                    </div>
+
                     <div class="op-card" style="padding: 1.5rem;">
                         <div class="btn-header">
                             <div>
@@ -451,4 +466,160 @@
 
     <!-- Modals renderer for actions -->
     <x-filament-actions::modals />
+
+    <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('dispatchMap', (config) => ({
+            map: null,
+            markers: {},
+            driverMarkers: {},
+            routePolyline: null,
+            config: config,
+
+            initMap() {
+                const checkGoogle = setInterval(() => {
+                    if (window.google && window.google.maps) {
+                        clearInterval(checkGoogle);
+                        this.setupMap();
+                    }
+                }, 100);
+            },
+
+            setupMap() {
+                const mapOptions = {
+                    center: { lat: 31.5204, lng: 74.3587 },
+                    zoom: 12,
+                    disableDefaultUI: false,
+                    zoomControl: true,
+                };
+                
+                const mapElement = document.getElementById('live-tracking-map');
+                if (!mapElement) return;
+
+                this.map = new google.maps.Map(mapElement, mapOptions);
+                
+                this.plotStops();
+                this.plotDrivers();
+                this.fitBounds();
+
+                window.addEventListener('driver-locations-updated', (event) => {
+                    this.updateDrivers(event.detail.locations);
+                });
+            },
+
+            plotStops() {
+                const pathCoordinates = [];
+
+                this.config.stops.forEach((stop) => {
+                    const position = { lat: stop.lat, lng: stop.lng };
+                    pathCoordinates.push(position);
+
+                    const marker = new google.maps.Marker({
+                        position: position,
+                        map: this.map,
+                        title: `${stop.pos}. ${stop.name}`,
+                        label: {
+                            text: String(stop.pos),
+                            color: 'white',
+                            fontWeight: 'bold'
+                        },
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            fillColor: '#f59e0b',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2,
+                            scale: 14,
+                        }
+                    });
+
+                    this.markers[stop.pos] = marker;
+                });
+
+                if (pathCoordinates.length > 1) {
+                    this.routePolyline = new google.maps.Polyline({
+                        path: pathCoordinates,
+                        geodesic: true,
+                        strokeColor: '#f59e0b',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 4,
+                        map: this.map
+                    });
+                }
+            },
+
+            plotDrivers() {
+                this.config.locations.forEach((loc) => {
+                    this.createOrUpdateDriverMarker(loc);
+                });
+            },
+
+            createOrUpdateDriverMarker(loc) {
+                const position = { lat: loc.latitude, lng: loc.longitude };
+                
+                if (this.driverMarkers[loc.driver_name]) {
+                    this.driverMarkers[loc.driver_name].setPosition(position);
+                } else {
+                    const marker = new google.maps.Marker({
+                        position: position,
+                        map: this.map,
+                        title: `Driver: ${loc.driver_name}`,
+                        icon: {
+                            path: 'M23.5 17h-1.5v-3.5c0-1.4-1.1-2.5-2.5-2.5h-9c-1.4 0-2.5 1.1-2.5 2.5v3.5h-1.5c-.8 0-1.5.7-1.5 1.5v3c0 .8.7 1.5 1.5 1.5h18c.8 0 1.5-.7 1.5-1.5v-3c0-.8-.7-1.5-1.5-1.5zm-12.5-3.5c0-.3.2-.5.5-.5h2.5v3h-3v-2.5zm5 0h2.5c.3 0 .5.2.5.5v2.5h-3v-3zm-9 9.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm13 0c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z',
+                            fillColor: '#10b981',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 1,
+                            scale: 1.2,
+                            anchor: new google.maps.Point(12, 12)
+                        }
+                    });
+
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div style="color: black; font-family: sans-serif; font-size: 12px; padding: 4px;">
+                            <strong>🚚 ${loc.driver_name}</strong><br/>
+                            Active on ${loc.route_name}<br/>
+                            <span style="font-size: 10px; color: #64748b;">Updated: ${new Date(loc.updated_at).toLocaleTimeString()}</span>
+                        </div>`
+                    });
+
+                    marker.addListener('click', () => {
+                        infoWindow.open(this.map, marker);
+                    });
+
+                    this.driverMarkers[loc.driver_name] = marker;
+                }
+            },
+
+            updateDrivers(locations) {
+                locations.forEach((loc) => {
+                    this.createOrUpdateDriverMarker(loc);
+                });
+            },
+
+            fitBounds() {
+                const bounds = new google.maps.LatLngBounds();
+                let hasPoints = false;
+
+                this.config.stops.forEach((stop) => {
+                    bounds.extend({ lat: stop.lat, lng: stop.lng });
+                    hasPoints = true;
+                });
+
+                this.config.locations.forEach((loc) => {
+                    bounds.extend({ lat: loc.latitude, lng: loc.longitude });
+                    hasPoints = true;
+                });
+
+                if (hasPoints && this.map) {
+                    this.map.fitBounds(bounds);
+                    const listener = google.maps.event.addListener(this.map, "idle", () => {
+                        if (this.map.getZoom() > 16) this.map.setZoom(14);
+                        google.maps.event.removeListener(listener);
+                    });
+                }
+            }
+        }));
+    });
+    </script>
 </x-filament-panels::page>

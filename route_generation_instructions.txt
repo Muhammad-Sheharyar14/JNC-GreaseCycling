@@ -1,0 +1,23 @@
+========================================================================
+             HOW TO ASSIGN DAILY ROUTES & STOPS TO DRIVERS
+========================================================================
+
+Follow these 3 simple steps to assign routes and stops to your drivers:
+
+Step 1: Create or Confirm Your Routes
+-------------------------------------
+1. Log in to your Admin Panel and go to: Customers > Routes (or go directly to: /admin/routes).
+2. Ensure you have created your routes, selected the active service days (e.g. Monday, Wednesday), and assigned a driver to each route.
+
+Step 2: Access the Dispatch Dashboard
+-------------------------------------
+1. Go to the Dispatch Dashboard (or go directly to: /admin/dispatch-dashboard).
+2. Under the "Routes Active Today" section, you will see the list of routes scheduled for today. Select route 
+
+Step 3: Generate the Stops
+--------------------------
+1. Click the "Generate Stops" button located in the top-right corner of the dashboard page.
+2. The system will automatically generate all scheduled stops for the assigned routes and push them directly to the drivers' mobile apps.
+
+Done! Your drivers can now open their mobile app and see their daily routes and stop lists instantly.
+========================================================================

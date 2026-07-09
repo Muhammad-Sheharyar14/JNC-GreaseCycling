@@ -297,6 +297,46 @@ class DispatchDashboard extends Page implements HasActions
     }
 
     /**
+     * Get live locations of all drivers assigned to active routes today.
+     */
+    public function getDriverLocations(): array
+    {
+        if (!$this->date) {
+            return [];
+        }
+
+        $weekday = Carbon::parse($this->date)->format('l');
+
+        $routes = Route::with(['assignedDriver.driverLocation'])
+            ->whereJsonContains('service_days', $weekday)
+            ->get();
+
+        $locations = [];
+        foreach ($routes as $route) {
+            $driver = $route->assignedDriver;
+            if ($driver && $driver->driverLocation) {
+                $locations[] = [
+                    'driver_name' => $driver->name,
+                    'route_name' => $route->name,
+                    'latitude' => (float) $driver->driverLocation->latitude,
+                    'longitude' => (float) $driver->driverLocation->longitude,
+                    'updated_at' => $driver->driverLocation->updated_at->toIso8601String(),
+                ];
+            }
+        }
+
+        return $locations;
+    }
+
+    /**
+     * Periodically refresh driver locations and dispatch event.
+     */
+    public function refreshLocations(): void
+    {
+        $this->dispatch('driver-locations-updated', locations: $this->getDriverLocations());
+    }
+
+    /**
      * Recalculate ordering sequence for a route's scheduled stops on a date.
      */
     private function reorderStops(int $routeId, string $date): void

@@ -31,7 +31,8 @@ export const getCachedRoute = async () => {
 export const cacheRoute = async (routeData) => {
   try {
     const db = await initDB();
-    return await db.put('cached_route', routeData, 'today_route');
+    const plainData = JSON.parse(JSON.stringify(routeData));
+    return await db.put('cached_route', plainData, 'today_route');
   } catch (error) {
     console.error('IndexedDB cacheRoute error:', error);
   }
@@ -49,9 +50,10 @@ export const clearCachedRoute = async () => {
 export const queuePickup = async (stopId, payload) => {
   try {
     const db = await initDB();
+    const plainPayload = JSON.parse(JSON.stringify(payload));
     return await db.add('pickup_queue', {
       stopId,
-      payload,
+      payload: plainPayload,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

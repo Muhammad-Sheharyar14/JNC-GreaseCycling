@@ -28,11 +28,11 @@
           <div class="glass-card user-card">
             <div class="avatar-section">
               <div class="avatar-circle">
-                <span class="avatar-initial">{{ profileData.driver.name.charAt(0).toUpperCase() }}</span>
+                <span class="avatar-initial">{{ profileData.driver?.name ? profileData.driver.name.charAt(0).toUpperCase() : '?' }}</span>
               </div>
               <div class="user-meta">
-                <h2>{{ profileData.driver.name }}</h2>
-                <p class="email">{{ profileData.driver.email }}</p>
+                <h2>{{ profileData.driver?.name || 'Driver' }}</h2>
+                <p class="email">{{ profileData.driver?.email || '' }}</p>
                 <div class="role-badge">
                   <span class="role-dot"></span>
                   <span>Active Driver</span>
@@ -44,7 +44,7 @@
             
             <div class="info-row">
               <span class="info-label">Member Since</span>
-              <span class="info-value">{{ formatDate(profileData.driver.joined_at) }}</span>
+              <span class="info-value">{{ formatDate(profileData.driver?.joined_at) }}</span>
             </div>
           </div>
 
@@ -95,8 +95,8 @@
               >
                 <div class="history-item-header">
                   <div class="location-info">
-                    <h4>{{ event.location.name }}</h4>
-                    <p class="customer">{{ event.location.customer.name }}</p>
+                    <h4>{{ event.location?.name || 'Deleted Location' }}</h4>
+                    <p class="customer">{{ event.location?.customer?.name || 'Deleted Customer' }}</p>
                   </div>
                   <span :class="['badge', `badge-${event.status}`]">
                     {{ event.status }}
@@ -496,5 +496,11 @@ onMounted(() => {
 
 .text-right {
   text-align: right;
+}
+
+@media (max-width: 991px) {
+  .history-card {
+    margin-top: 25px;
+  }
 }
 </style>

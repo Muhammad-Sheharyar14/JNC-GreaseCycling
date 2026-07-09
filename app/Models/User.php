@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
@@ -54,6 +55,14 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the live location of the driver.
+     */
+    public function driverLocation(): HasOne
+    {
+        return $this->hasOne(DriverLocation::class);
     }
 
     /**

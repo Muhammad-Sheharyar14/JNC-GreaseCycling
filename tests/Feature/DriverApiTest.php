@@ -245,4 +245,56 @@ class DriverApiTest extends TestCase
             'status' => 'completed',
         ]);
     }
+
+    /**
+     * Test driver can update live location coordinates.
+     */
+    public function test_driver_can_update_location(): void
+    {
+        $response = $this->actingAs($this->driverUser, 'sanctum')
+            ->postJson('/api/driver/location', [
+                'latitude' => 31.5204,
+                'longitude' => 74.3587,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('driver_locations', [
+            'user_id' => $this->driverUser->id,
+            'latitude' => 31.52040000,
+            'longitude' => 74.35870000,
+        ]);
+    }
+
+    /**
+     * Test invalid coordinates validation.
+     */
+    public function test_invalid_location_coordinates_are_validated(): void
+    {
+        $response = $this->actingAs($this->driverUser, 'sanctum')
+            ->postJson('/api/driver/location', [
+                'latitude' => 120.0, // Invalid latitude (> 90)
+                'longitude' => 74.3587,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['latitude']);
+    }
+
+    /**
+     * Test non-drivers are forbidden from updating driver location.
+     */
+    public function test_non_driver_cannot_update_location(): void
+    {
+        $adminUser = User::whereEmail('admin@greasecycling.com')->first();
+
+        $response = $this->actingAs($adminUser, 'sanctum')
+            ->postJson('/api/driver/location', [
+                'latitude' => 31.5204,
+                'longitude' => 74.3587,
+            ]);
+
+        $response->assertStatus(403);
+    }
 }

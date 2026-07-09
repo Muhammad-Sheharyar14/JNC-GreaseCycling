@@ -1,8 +1,10 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from './stores/auth';
 import { useRouteStore } from './stores/route';
 import { syncOfflinePickups } from './services/sync';
+import { Geolocation } from '@capacitor/geolocation';
+import axios from 'axios';
 
 const authStore = useAuthStore();
 const routeStore = useRouteStore();
@@ -10,6 +12,66 @@ const routeStore = useRouteStore();
 const isOnline = ref(navigator.onLine);
 const showSyncBanner = ref(false);
 const syncCount = ref(0);
+
+let trackingIntervalId = null;
+
+const startTracking = async () => {
+  if (trackingIntervalId) return;
+
+  try {
+    const permission = await Geolocation.requestPermissions();
+    console.log('Location permission result:', permission);
+  } catch (e) {
+    console.warn('Geolocation permissions error:', e);
+  }
+
+  const sendLocation = async () => {
+    if (!navigator.onLine || !authStore.isAuthenticated) return;
+    if (!routeStore.routeRun || routeStore.routeRun.status !== 'in_progress') return;
+
+    try {
+      const position = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15000,
+      });
+
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      await axios.post(`${apiBaseUrl}/driver/location`, {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+      console.log('Driver location tracked:', position.coords.latitude, position.coords.longitude);
+    } catch (err) {
+      console.error('Error tracking position:', err);
+    }
+  };
+
+  // Run immediately on start
+  await sendLocation();
+
+  trackingIntervalId = setInterval(sendLocation, 20000);
+};
+
+const stopTracking = () => {
+  if (trackingIntervalId) {
+    clearInterval(trackingIntervalId);
+    trackingIntervalId = null;
+    console.log('Location tracking stopped.');
+  }
+};
+
+// Watch for authentication and route status changes
+watch(
+  () => [authStore.isAuthenticated, routeStore.routeRun?.status],
+  ([auth, routeStatus]) => {
+    if (auth && routeStatus === 'in_progress') {
+      startTracking();
+    } else {
+      stopTracking();
+    }
+  },
+  { immediate: true }
+);
 
 const handleOnline = async () => {
   isOnline.value = true;
@@ -55,6 +117,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('online', handleOnline);
   window.removeEventListener('offline', handleOffline);
+  stopTracking();
 });
 </script>
 

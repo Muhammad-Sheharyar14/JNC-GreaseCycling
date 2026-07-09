@@ -19,6 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/driver/profile', [DriverRouteController::class, 'profile']);
     Route::post('/driver/route/start', [DriverRouteController::class, 'start']);
     Route::post('/driver/route/complete', [DriverRouteController::class, 'complete']);
+    Route::post('/driver/location', [\App\Http\Controllers\Api\DriverLocationController::class, 'update']);
 
     // Driver Stop Management
     Route::get('/driver/stops/{scheduledStop}', [DriverStopController::class, 'show']);
