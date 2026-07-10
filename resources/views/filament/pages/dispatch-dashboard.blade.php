@@ -534,16 +534,58 @@
                         pathCoordinates.sort((a, b) => a.pos - b.pos);
                         
                         if (this.routePolyline) {
-                            this.routePolyline.setMap(null);
+                            if (typeof this.routePolyline.setMap === 'function') {
+                                this.routePolyline.setMap(null);
+                            } else if (typeof this.routePolyline.setDirections === 'function') {
+                                this.routePolyline.setMap(null);
+                            }
                         }
 
-                        this.routePolyline = new google.maps.Polyline({
-                            path: pathCoordinates.map(p => ({ lat: p.lat, lng: p.lng })),
-                            geodesic: true,
-                            strokeColor: '#f59e0b',
-                            strokeOpacity: 0.8,
-                            strokeWeight: 4,
-                            map: this.map
+                        // Try to render dynamic road path using DirectionsService
+                        const directionsService = new google.maps.DirectionsService();
+                        const directionsRenderer = new google.maps.DirectionsRenderer({
+                            map: this.map,
+                            suppressMarkers: true,
+                            preserveViewport: true,
+                            polylineOptions: {
+                                strokeColor: '#f59e0b',
+                                strokeOpacity: 0.8,
+                                strokeWeight: 4
+                            }
+                        });
+
+                        const origin = { lat: pathCoordinates[0].lat, lng: pathCoordinates[0].lng };
+                        const destination = { lat: pathCoordinates[pathCoordinates.length - 1].lat, lng: pathCoordinates[pathCoordinates.length - 1].lng };
+                        
+                        const waypoints = [];
+                        for (let i = 1; i < pathCoordinates.length - 1; i++) {
+                            waypoints.push({
+                                location: { lat: pathCoordinates[i].lat, lng: pathCoordinates[i].lng },
+                                stopover: true
+                            });
+                        }
+
+                        directionsService.route({
+                            origin: origin,
+                            destination: destination,
+                            waypoints: waypoints,
+                            travelMode: google.maps.TravelMode.DRIVING
+                        }, (result, status) => {
+                            if (status === google.maps.DirectionsStatus.OK) {
+                                directionsRenderer.setDirections(result);
+                                this.routePolyline = directionsRenderer;
+                            } else {
+                                console.warn('Dispatch road directions request failed status:', status);
+                                // Fallback: draw straight polyline
+                                this.routePolyline = new google.maps.Polyline({
+                                    path: pathCoordinates.map(p => ({ lat: p.lat, lng: p.lng })),
+                                    geodesic: true,
+                                    strokeColor: '#f59e0b',
+                                    strokeOpacity: 0.8,
+                                    strokeWeight: 4,
+                                    map: this.map
+                                });
+                            }
                         });
                     }
                     this.fitBounds(bounds);

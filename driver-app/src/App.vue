@@ -73,6 +73,21 @@ watch(
   { immediate: true }
 );
 
+// Pre-fetch today's route when logged in to populate route status in store
+watch(
+  () => authStore.isAuthenticated,
+  async (auth) => {
+    if (auth && !routeStore.routeId) {
+      try {
+        await routeStore.fetchTodayRoute();
+      } catch (e) {
+        console.warn('Failed to pre-fetch today route:', e);
+      }
+    }
+  },
+  { immediate: true }
+);
+
 const handleOnline = async () => {
   isOnline.value = true;
   
@@ -102,8 +117,16 @@ const handleOffline = () => {
   isOnline.value = false;
 };
 
-onMounted(() => {
+onMounted(async () => {
   authStore.initialize();
+
+  if (authStore.isAuthenticated) {
+    try {
+      await routeStore.fetchTodayRoute();
+    } catch (e) {
+      console.warn('Failed to pre-fetch route on mount:', e);
+    }
+  }
   
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
