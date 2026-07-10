@@ -49,7 +49,7 @@ const startTracking = async () => {
   // Run immediately on start
   await sendLocation();
 
-  trackingIntervalId = setInterval(sendLocation, 20000);
+  trackingIntervalId = setInterval(sendLocation, 5000);
 };
 
 const stopTracking = () => {
