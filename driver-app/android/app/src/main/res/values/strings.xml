@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">JNC GreaseCycling</string>
-    <string name="title_activity_main">JNC GreaseCycling</string>
+    <string name="app_name">JNC Grease Cycling</string>
+    <string name="title_activity_main">JNC Grease Cycling</string>
     <string name="package_name">com.greasecycling.driver</string>
     <string name="custom_url_scheme">com.greasecycling.driver</string>
 </resources>
