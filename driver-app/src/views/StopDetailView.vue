@@ -30,7 +30,7 @@
           
           <p class="address">{{ stop.location.service_address }}</p>
           
-          <div class="maps-btn-container">
+          <div class="maps-btn-container" style="display: none;">
             <a
               :href="googleMapsUrl"
               target="_blank"
