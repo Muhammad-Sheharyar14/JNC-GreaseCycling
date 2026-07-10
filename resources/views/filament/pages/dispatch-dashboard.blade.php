@@ -708,7 +708,6 @@
                 locations.forEach((loc) => {
                     this.createOrUpdateDriverMarker(loc);
                 });
-                this.fitBounds();
             },
 
             fitBounds(stopsBounds) {
