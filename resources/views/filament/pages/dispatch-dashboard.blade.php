@@ -243,7 +243,7 @@
     </style>
 
     <div class="op-container">
-        <div wire:poll.5s="refreshLocations" style="display: none;"></div>
+        <div wire:poll.3s="refreshLocations" style="display: none;"></div>
         <!-- Date Selector panel -->
         <div class="op-card op-header-bar">
             <div>
