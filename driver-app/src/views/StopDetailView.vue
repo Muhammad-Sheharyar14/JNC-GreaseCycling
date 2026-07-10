@@ -303,10 +303,82 @@ const previousLat = ref(null);
 const previousLng = ref(null);
 const currentHeading = ref(0);
 
+// Smooth out high-frequency noise from compass sensor (Low-pass filter)
+let lastCompassHeading = 0;
+const filterFactor = 0.8; 
+
+const handleOrientation = (event) => {
+  if (!isFollowing.value) return;
+  
+  let headingVal = null;
+  
+  // iOS support (webkitCompassHeading)
+  if (event.webkitCompassHeading !== undefined) {
+    headingVal = event.webkitCompassHeading;
+  } 
+  // Android / Absolute device orientation support (alpha)
+  else if (event.absolute && event.alpha !== null) {
+    headingVal = 360 - event.alpha; // Convert to standard compass heading
+  }
+
+  if (headingVal !== null && !isNaN(headingVal)) {
+    // Smoothen heading update to prevent map shaking/jittering
+    let diff = headingVal - lastCompassHeading;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    
+    const smoothedHeading = (lastCompassHeading + diff * (1 - filterFactor) + 360) % 360;
+    lastCompassHeading = smoothedHeading;
+    currentHeading.value = smoothedHeading;
+    
+    // Rotate Map Viewport in real-time
+    if (map.value && typeof map.value.setHeading === 'function') {
+      map.value.setHeading(smoothedHeading);
+    }
+    
+    // Rotate driver blue navigation arrow
+    if (driverMarker.value) {
+      const icon = driverMarker.value.getIcon();
+      if (icon) {
+        icon.rotation = smoothedHeading;
+        driverMarker.value.setIcon(icon);
+      }
+    }
+  }
+};
+
+const startCompassListener = () => {
+  // iOS requires permission dialog
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then((state) => {
+        if (state === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation, true);
+        }
+      })
+      .catch((err) => console.warn('Compass permission rejected/denied:', err));
+  } else {
+    // Android or Desktop Web
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    } else {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+  }
+};
+
+const stopCompassListener = () => {
+  window.removeEventListener('deviceorientation', handleOrientation, true);
+  window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+};
+
 const toggleFollowMode = () => {
   isFollowing.value = !isFollowing.value;
   if (isFollowing.value) {
     recenterMapOnDriver();
+    startCompassListener();
+  } else {
+    stopCompassListener();
   }
 };
 
@@ -316,7 +388,7 @@ const recenterMapOnDriver = () => {
     map.value.setZoom(17); // Premium navigation zoom
     map.value.setTilt(45); // 3D Perspective angle like Google Maps
     if (currentHeading.value !== null && !isNaN(currentHeading.value)) {
-      map.value.setHeading(currentHeading.value); // Rotate map viewport towards direction of travel
+      map.value.setHeading(currentHeading.value); 
     }
   }
 };
@@ -415,6 +487,10 @@ const setupMap = () => {
   }
 
   updateDriverMarkerAndRoute();
+
+  if (isFollowing.value) {
+    startCompassListener();
+  }
 };
 
 const updateDriverMarkerAndRoute = () => {
@@ -563,6 +639,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopWatchingLocation();
+  stopCompassListener();
 });
 </script>
 
