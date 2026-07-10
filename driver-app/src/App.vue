@@ -4,6 +4,7 @@ import { useAuthStore } from './stores/auth';
 import { useRouteStore } from './stores/route';
 import { syncOfflinePickups } from './services/sync';
 import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import axios from 'axios';
 
 const authStore = useAuthStore();
@@ -19,8 +20,10 @@ const startTracking = async () => {
   if (trackingIntervalId) return;
 
   try {
-    const permission = await Geolocation.requestPermissions();
-    console.log('Location permission result:', permission);
+    if (Capacitor.isNativePlatform()) {
+      const permission = await Geolocation.requestPermissions();
+      console.log('Location permission result:', permission);
+    }
   } catch (e) {
     console.warn('Geolocation permissions error:', e);
   }
