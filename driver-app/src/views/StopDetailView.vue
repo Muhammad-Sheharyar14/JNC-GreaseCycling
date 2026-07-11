@@ -66,7 +66,7 @@
         <div class="glass-card map-card">
           <div class="map-card-header">
             <span class="map-title-text">🗺️ Interactive Map</span>
-            <a :href="googleMapsUrl" target="_blank" class="btn-open-maps">
+            <a :href="googleMapsUrl" target="_blank" class="btn-open-maps" style="display: none;">
               OPEN IN MAPS <span class="arrow">↗</span>
             </a>
           </div>
