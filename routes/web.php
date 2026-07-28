@@ -2,12 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Redirect root to /privacy-police
+// Home Landing Page Route
 Route::get('/', function () {
-    return redirect('/privacy-police');
-});
+    return view('welcome');
+})->name('home');
 
 // Privacy Policy Route
 Route::get('/privacy-police', function () {
-    return view('welcome');
+    return view('privacy');
 })->name('privacy.police');
