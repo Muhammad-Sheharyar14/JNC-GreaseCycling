@@ -33,7 +33,7 @@ class RouteSchedulerTest extends TestCase
         // 1. Create a Route running on Monday
         $route = Route::create([
             'name' => 'Monday Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
         ]);
 
         $customer = Customer::create(['name' => 'Test Customer', 'status' => 'active']);
@@ -85,7 +85,7 @@ class RouteSchedulerTest extends TestCase
     {
         $route = Route::create([
             'name' => 'Monday Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
         ]);
 
         $customer = Customer::create(['name' => 'Test Customer', 'status' => 'active']);
@@ -174,11 +174,13 @@ class RouteSchedulerTest extends TestCase
         // Neither biweekly (7 days elapsed < 12) nor monthly (7 days elapsed < 26) should be scheduled.
         ScheduledStop::query()->delete();
         $monday2 = Carbon::parse('2026-07-06');
+        $route->update(['date_of_service' => '2026-07-06']);
         $count = $this->scheduler->generateStopsForDate($monday2);
         $this->assertEquals(0, $count);
 
         // Run scheduler for 2nd Monday (14 days later: 2026-07-13).
         $monday3 = Carbon::parse('2026-07-13');
+        $route->update(['date_of_service' => '2026-07-13']);
         $count = $this->scheduler->generateStopsForDate($monday3);
         $this->assertEquals(1, $count);
         $this->assertTrue(
@@ -204,6 +206,7 @@ class RouteSchedulerTest extends TestCase
         // Biweekly (14 days elapsed since last pickup on 2026-07-13) and Monthly (28 days elapsed since last pickup on 2026-06-29) should both be scheduled.
         ScheduledStop::query()->delete();
         $monday5 = Carbon::parse('2026-07-27');
+        $route->update(['date_of_service' => '2026-07-27']);
         $count = $this->scheduler->generateStopsForDate($monday5);
         $this->assertEquals(2, $count);
         $this->assertTrue(
@@ -225,7 +228,7 @@ class RouteSchedulerTest extends TestCase
     {
         $route = Route::create([
             'name' => 'Monday Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
         ]);
 
         $activeCust = Customer::create(['name' => 'Active Customer', 'status' => 'active']);
@@ -266,7 +269,7 @@ class RouteSchedulerTest extends TestCase
     {
         $route = Route::create([
             'name' => 'Monday Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
         ]);
 
         $customer = Customer::create(['name' => 'Active Customer', 'status' => 'active']);

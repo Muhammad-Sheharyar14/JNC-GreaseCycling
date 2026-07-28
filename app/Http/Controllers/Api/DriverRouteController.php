@@ -31,11 +31,10 @@ class DriverRouteController extends Controller
         // Find which route is active today (if any)
         $routeId = $stops->first()?->route_id;
         
-        // If no stops are scheduled, check if there is a route assigned to the driver for today's weekday
+        // If no stops are scheduled, check if there is a route assigned to the driver for today's date
         if (!$routeId) {
-            $weekday = Carbon::today()->format('l');
             $route = Route::where('assigned_driver_id', $user->id)
-                ->whereJsonContains('service_days', $weekday)
+                ->whereDate('date_of_service', $today)
                 ->first();
             $routeId = $route?->id;
         }

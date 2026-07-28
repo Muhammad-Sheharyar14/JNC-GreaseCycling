@@ -36,7 +36,7 @@ class DriverApiTest extends TestCase
         // Create route and stops
         $this->route = Route::create([
             'name' => 'Monday Test Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => now()->toDateString(),
             'assigned_driver_id' => $this->driverUser->id,
         ]);
 

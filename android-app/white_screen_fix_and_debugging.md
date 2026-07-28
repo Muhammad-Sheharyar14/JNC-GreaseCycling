@@ -3,7 +3,7 @@
 If you got a **white screen** after installing the compiled Capacitor app on your phone, it is a very common issue caused by resource routing:
 
 ## The Cause of the White Screen
-In our web deployment, the app base path is configured as `/driver/` so it can run under `test21.webycart.pk/driver/`. 
+In our web deployment, the app base path is configured as `/driver/` so it can run under `jcgreasecylingrouteapp.com/driver/`. 
 However, Capacitor runs the application locally from `http://localhost/` inside the mobile webview. Because of the `/driver/` base path, Capacitor was looking for assets under `http://localhost/driver/assets/...` instead of the root folder, resulting in a silent 404 resource loading failure (white screen).
 
 ---
@@ -11,9 +11,9 @@ However, Capacitor runs the application locally from `http://localhost/` inside 
 ## The Two Solutions (Choose one)
 
 ### Approach A: Remote Webview Mode (Easiest & Recommended)
-Instead of packaging the compiled static files inside the APK, you can configure Capacitor to directly load the web app from your live production URL: `https://test21.webycart.pk/driver`.
+Instead of packaging the compiled static files inside the APK, you can configure Capacitor to directly load the web app from your live production URL: `https://jcgreasecylingrouteapp.com/driver`.
 
-**Why this is great**: Any updates you push to your live website `https://test21.webycart.pk/driver` will instantly update inside all drivers' native Android apps automatically! You do not need to rebuild or reinstall a new APK ever again.
+**Why this is great**: Any updates you push to your live website `https://jcgreasecylingrouteapp.com/driver` will instantly update inside all drivers' native Android apps automatically! You do not need to rebuild or reinstall a new APK ever again.
 
 #### Steps:
 1. Open the file **`driver-app/capacitor.config.json`** on your computer.
@@ -24,7 +24,7 @@ Instead of packaging the compiled static files inside the APK, you can configure
      "appName": "JNC GreaseCycling",
      "webDir": "dist",
      "server": {
-       "url": "https://test21.webycart.pk/driver/",
+       "url": "https://jcgreasecylingrouteapp.com/driver/",
        "cleartext": true
      }
    }
@@ -69,4 +69,4 @@ You can inspect the running mobile application using Google Chrome developer too
 6. A DevTools window will open. You can now:
    * View the console to read JS errors or API responses.
    * Debug elements and styles.
-   * Verify networks to see requests hitting the API backend at `https://test21.webycart.pk/api`.
+   * Verify networks to see requests hitting the API backend at `https://jcgreasecylingrouteapp.com/api`.

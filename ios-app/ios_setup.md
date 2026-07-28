@@ -31,7 +31,7 @@ On your Mac (or within your project folder if shared with a Mac):
 ---
 
 ## Step 2: Sync and Configure the Remote Webview
-Your `capacitor.config.json` is already configured for Remote Webview mode (which points to `https://test21.webycart.pk/driver/`). 
+Your `capacitor.config.json` is already configured for Remote Webview mode (which points to `https://jcgreasecylingrouteapp.com/driver/`). 
 
 To copy this configuration and prepare the iOS files, run:
 ```bash

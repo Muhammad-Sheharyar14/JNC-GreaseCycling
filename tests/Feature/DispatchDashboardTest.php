@@ -44,13 +44,13 @@ class DispatchDashboardTest extends TestCase
         // Create routes (running on Monday)
         $this->route1 = Route::create([
             'name' => 'Monday Route 1',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
             'assigned_driver_id' => $this->driverUser->id,
         ]);
 
         $this->route2 = Route::create([
             'name' => 'Monday Route 2',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
             'assigned_driver_id' => $this->driverUser->id,
         ]);
 

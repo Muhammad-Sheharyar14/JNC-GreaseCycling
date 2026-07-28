@@ -19,9 +19,10 @@ class RoutesTable
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('service_days')
-                    ->badge()
-                    ->color('info'),
+                TextColumn::make('date_of_service')
+                    ->label('Date of Service')
+                    ->date()
+                    ->sortable(),
                 TextColumn::make('assignedDriver.name')
                     ->label('Assigned Driver')
                     ->searchable()
@@ -54,12 +55,12 @@ class RoutesTable
                             $filename = 'routes-export-' . now()->format('Y-md-His') . '.csv';
                             return response()->streamDownload(function () use ($records) {
                                 $handle = fopen('php://output', 'w');
-                                fputcsv($handle, ['ID', 'Route Name', 'Service Days', 'Assigned Driver Name']);
+                                fputcsv($handle, ['ID', 'Route Name', 'Date of Service', 'Assigned Driver Name']);
                                 foreach ($records as $record) {
                                     fputcsv($handle, [
                                         $record->id,
                                         $record->name,
-                                        is_array($record->service_days) ? implode(', ', $record->service_days) : $record->service_days,
+                                        $record->date_of_service ? $record->date_of_service->format('Y-m-d') : '',
                                         $record->assignedDriver?->name,
                                     ]);
                                 }

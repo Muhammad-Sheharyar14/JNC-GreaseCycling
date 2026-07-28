@@ -13,12 +13,12 @@ class Route extends Model
 
     protected $fillable = [
         'name',
-        'service_days',
+        'date_of_service',
         'assigned_driver_id',
     ];
 
     protected $casts = [
-        'service_days' => 'array',
+        'date_of_service' => 'date',
     ];
 
     /**

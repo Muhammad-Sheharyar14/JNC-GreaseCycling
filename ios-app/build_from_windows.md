@@ -10,7 +10,7 @@ However, here are the **4 practical ways** you can deliver the iOS version to yo
 Since we already built the driver app as a **Progressive Web App (PWA)**, your client can install it on their iPhone instantly without compiling any code:
 
 1. Have your client open **Safari** on their iPhone.
-2. Go to: **`https://test21.webycart.pk/driver/`**
+2. Go to: **`https://jcgreasecylingrouteapp.com/driver/`**
 3. Tap the **Share** button (the square with an arrow pointing up at the bottom).
 4. Scroll down and tap **Add to Home Screen**.
 5. The JNC GreaseCycling logo will appear on their home screen. When they tap it, it will launch in full screen, hide the safari address bar, support offline caching, and feel exactly like a native app.

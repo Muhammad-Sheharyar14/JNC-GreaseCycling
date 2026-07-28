@@ -49,5 +49,5 @@ Android Studio will compile, shrink, and sign the app. Once complete, a popup wi
 
 ## 3. Distributing the App
 Once you have the signed **`app-release.apk`**:
-* **Direct Install**: You can upload this file to your server (e.g., `test21.webycart.pk/driver.apk`) and send the download link to your drivers, or send it to them via WhatsApp.
+* **Direct Install**: You can upload this file to your server (e.g., `jcgreasecylingrouteapp.com/driver.apk`) and send the download link to your drivers, or send it to them via WhatsApp.
 * **Google Play Store**: You can register for a Google Play Console account and upload this APK to publish it on the Play Store.

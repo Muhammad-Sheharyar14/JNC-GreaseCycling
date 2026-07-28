@@ -20,11 +20,10 @@ class RouteScheduler
     public function generateStopsForDate(DateTimeInterface $date): int
     {
         $carbonDate = Carbon::instance($date);
-        $weekday = $carbonDate->format('l'); // e.g. "Monday"
         $dateStr = $carbonDate->toDateString();
 
-        // 1. Find all routes servicing this weekday
-        $routes = Route::whereJsonContains('service_days', $weekday)->get();
+        // 1. Find all routes scheduled for this exact date of service
+        $routes = Route::whereDate('date_of_service', $carbonDate)->get();
         $generatedCount = 0;
 
         foreach ($routes as $route) {

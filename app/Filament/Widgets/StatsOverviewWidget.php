@@ -76,7 +76,7 @@ class StatsOverviewWidget extends BaseWidget
         $today = Carbon::today();
         $weekday = $today->format('l');
         
-        $routesTodayCount = Route::whereJsonContains('service_days', $weekday)->count();
+        $routesTodayCount = Route::whereDate('date_of_service', $today)->count();
         
         $stopsToday = ScheduledStop::whereDate('date', $today->toDateString())->count();
         $completedStops = ScheduledStop::whereDate('date', $today->toDateString())

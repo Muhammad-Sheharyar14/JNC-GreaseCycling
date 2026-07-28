@@ -3,7 +3,7 @@
   "appName": "JNC Grease Cycling",
   "webDir": "dist",
   "server": {
-    "url": "https://test21.webycart.pk/driver/",
+    "url": "https://jcgreasecylingrouteapp.com/driver/",
     "cleartext": true
   }
 }

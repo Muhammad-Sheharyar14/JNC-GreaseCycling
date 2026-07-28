@@ -34,7 +34,7 @@ class DatabaseSchemaTest extends TestCase
         // 2. Create a Route and assign it to the Driver
         $route = Route::create([
             'name' => 'Monday North Route',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
             'assigned_driver_id' => $driver->id,
         ]);
 

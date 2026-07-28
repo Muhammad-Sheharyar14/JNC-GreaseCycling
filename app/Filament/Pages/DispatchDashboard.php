@@ -51,10 +51,8 @@ class DispatchDashboard extends Page implements HasActions
             return collect();
         }
 
-        $weekday = Carbon::parse($this->date)->format('l');
-
-        // Fetch routes that service this weekday with their driver relationship eager-loaded
-        $routes = Route::with('assignedDriver')->whereJsonContains('service_days', $weekday)->get();
+        // Fetch routes scheduled for this exact date of service
+        $routes = Route::with('assignedDriver')->whereDate('date_of_service', $this->date)->get();
 
         return $routes->map(function (Route $route) {
             $scheduledStops = ScheduledStop::where('route_id', $route->id)
@@ -112,9 +110,7 @@ class DispatchDashboard extends Page implements HasActions
      */
     public function getAvailableRoutesOptions(): array
     {
-        if (!$this->date) return [];
-        $weekday = Carbon::parse($this->date)->format('l');
-        return Route::whereJsonContains('service_days', $weekday)
+        return Route::whereDate('date_of_service', $this->date)
             ->where('id', '!=', $this->selectedRouteId)
             ->pluck('name', 'id')
             ->toArray();
@@ -305,10 +301,8 @@ class DispatchDashboard extends Page implements HasActions
             return [];
         }
 
-        $weekday = Carbon::parse($this->date)->format('l');
-
         $routes = Route::with(['assignedDriver.driverLocation'])
-            ->whereJsonContains('service_days', $weekday)
+            ->whereDate('date_of_service', $this->date)
             ->get();
 
         $locations = [];

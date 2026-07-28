@@ -41,7 +41,7 @@ class ReportsTest extends TestCase
         // Create route
         $this->route = Route::create([
             'name' => 'Route A',
-            'service_days' => ['Monday'],
+            'date_of_service' => '2026-06-29',
             'assigned_driver_id' => $this->driverUser->id,
         ]);
 

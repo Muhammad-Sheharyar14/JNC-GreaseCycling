@@ -12,7 +12,7 @@ DATES:
   Start: June 2025  |  End: July 2025  (or mark "In Progress" if ongoing)
 
 PROJECT URL (if hosted):
-  https://test21.webycart.pk/admin
+  https://jcgreasecylingrouteapp.com/admin
 
 ========================================================
   LINKEDIN DESCRIPTION (2,000 characters max — copy-paste ready)
@@ -80,7 +80,7 @@ STEP 4 — Fill in the Project Form
   • Start Date: June 2025
   • End Date: July 2025 (or check "I am currently working on this project")
   • Project URL:
-      https://test21.webycart.pk/admin
+      https://jcgreasecylingrouteapp.com/admin
   • Description:
       Paste the full description from the "LINKEDIN DESCRIPTION" section above.
       (LinkedIn allows up to 2,000 characters — the description above fits perfectly.)
@@ -101,7 +101,7 @@ STEP 6 — Save and Review
 STEP 7 — Pin to Featured Section (Recommended for max visibility)
   • Go back to your profile.
   • Click "Add section" → "Featured".
-  • You can add the project URL as a Link (https://test21.webycart.pk/admin)
+  • You can add the project URL as a Link (https://jcgreasecylingrouteapp.com/admin)
     with a custom title and description — this puts it right below your About section,
     the most-viewed part of your profile.
 
