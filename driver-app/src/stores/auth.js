@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', {
     async login(email, password) {
       try {
         const response = await axios.post(`${apiBaseUrl}/login`, { email, password });
-        const { token, user } = response.data;
+        const { token, user, redirect_to_admin } = response.data;
         
         this.token = token;
         this.user = user;
@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', {
         
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        return { success: true };
+        return { success: true, redirect_to_admin };
       } catch (error) {
         const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
         return { success: false, message };

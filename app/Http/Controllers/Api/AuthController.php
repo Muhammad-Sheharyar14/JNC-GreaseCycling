@@ -28,19 +28,29 @@ class AuthController extends Controller
             ]);
         }
 
-        // Ensure user is active and has the Driver role
+        // Ensure user is active
         if (!$user->active) {
             return response()->json(['message' => 'Your account is deactivated.'], 403);
         }
 
-        if (!$user->hasRole('Driver')) {
-            return response()->json(['message' => 'Access denied. Driver role required.'], 403);
+        // Validate role (Driver, Admin, Dispatcher, Accounting)
+        $hasValidRole = $user->hasAnyRole(['Driver', 'Admin', 'Dispatcher', 'Accounting']);
+        if (!$hasValidRole) {
+            return response()->json(['message' => 'Access denied. Unauthorized role.'], 403);
+        }
+
+        $isAdminOrDispatcher = $user->hasAnyRole(['Admin', 'Dispatcher', 'Accounting']);
+
+        if ($isAdminOrDispatcher) {
+            // Log user into web session guard so Filament will recognize them as logged in
+            \Illuminate\Support\Facades\Auth::guard('web')->login($user, true);
         }
 
         $token = $user->createToken('driver-token')->plainTextToken;
 
         return response()->json([
             'token' => $token,
+            'redirect_to_admin' => $isAdminOrDispatcher,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

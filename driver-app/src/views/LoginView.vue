@@ -68,7 +68,11 @@ const handleLogin = async () => {
   loading.value = false;
   
   if (result.success) {
-    router.push({ name: 'route' });
+    if (result.redirect_to_admin) {
+      window.location.href = '/admin';
+    } else {
+      router.push({ name: 'route' });
+    }
   } else {
     error.value = result.message;
   }

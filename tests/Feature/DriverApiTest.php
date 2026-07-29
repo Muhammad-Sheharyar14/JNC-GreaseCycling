@@ -85,13 +85,13 @@ class DriverApiTest extends TestCase
         ]);
         $response->assertStatus(422);
 
-        // 3. Failure: Access denied for non-driver role
+        // 3. Success: Access allowed for admin role with redirect_to_admin flag
         $response = $this->postJson('/api/login', [
             'email' => 'admin@greasecycling.com',
             'password' => 'password',
         ]);
-        $response->assertStatus(403)
-            ->assertJsonPath('message', 'Access denied. Driver role required.');
+        $response->assertStatus(200)
+            ->assertJsonPath('redirect_to_admin', true);
     }
 
     /**
