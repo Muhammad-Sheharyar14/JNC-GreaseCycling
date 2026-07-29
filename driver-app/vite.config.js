@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
   const isCapacitor = mode === 'capacitor';
   return {
     base: isCapacitor ? '/' : '/driver/',
+    build: {
+      outDir: isCapacitor ? 'dist' : '../public/driver',
+      emptyOutDir: true,
+    },
     plugins: [
     vue(),
     VitePWA({
