@@ -398,7 +398,7 @@
             <nav class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="#" class="nav-link active">Privacy Policy</a>
-                <a href="/driver/" class="btn-login">Driver Login</a>
+                <a href="/driver/" class="btn-login">Login</a>
             </nav>
         </div>
     </header>

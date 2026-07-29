@@ -645,7 +645,7 @@
             }
 
             .hero-graphic {
-                order: -1;
+                /* Let natural DOM order flow: content first, graphic second in mobile view */
             }
 
             .features-grid {
@@ -729,7 +729,7 @@
                 <a href="#services" class="nav-link">Our Services</a>
                 <a href="#how-it-works" class="nav-link">How It Works</a>
                 <a href="/privacy-police" class="nav-link">Privacy Policy</a>
-                <a href="/driver/" class="btn-login">Driver Login</a>
+                <a href="/driver/" class="btn-login">Login</a>
             </nav>
         </div>
     </header>
