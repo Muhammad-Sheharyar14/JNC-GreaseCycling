@@ -6,8 +6,12 @@ import App from './App.vue';
 import axios from 'axios';
 import { useAuthStore } from './stores/auth';
 
-const app = createApp(App);
 const pinia = createPinia();
+
+// Support cookie session sharing
+axios.defaults.withCredentials = true;
+
+const app = createApp(App);
 
 app.use(pinia);
 app.use(router);
