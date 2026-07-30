@@ -86,7 +86,7 @@ class StatsOverviewWidget extends BaseWidget
             ->where('status', 'skipped')
             ->count();
 
-        $activeDrivers = User::role('Driver')->where('is_active', true)->count();
+        $activeDrivers = User::role('Driver')->where('active', true)->count();
 
         return [
             Stat::make('Routes Running Today', $routesTodayCount)
