@@ -11,3 +11,11 @@ Route::get('/', function () {
 Route::get('/privacy-police', function () {
     return view('privacy');
 })->name('privacy.police');
+
+// Named login route for Filament redirects
+Route::get('/login', function () {
+    return redirect('/driver/');
+})->name('login');
+
+// Unified API Login route managed strictly by the web middleware group
+Route::post('/api/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);

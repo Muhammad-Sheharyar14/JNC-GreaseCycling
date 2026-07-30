@@ -176,6 +176,44 @@
         }
         .badge-red { background-color: #fee2e2; color: #b91c1c; }
         .dark .badge-red { background-color: #7f1d1d; color: #f87171; }
+
+        /* Mobile Responsiveness Improvements */
+        @media (max-width: 640px) {
+            .rep-card {
+                padding: 0.85rem;
+            }
+            .rep-header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            .rep-date-inputs {
+                justify-content: space-between;
+                width: 100%;
+            }
+            .rep-date-field {
+                flex: 1;
+                min-width: 0;
+                padding: 0.5rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            .card-header {
+                padding-bottom: 0.75rem;
+                margin-bottom: 0.75rem;
+                gap: 0.5rem;
+            }
+            .card-title {
+                font-size: 0.9rem;
+            }
+            .rep-table th {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.65rem;
+            }
+            .rep-table td {
+                padding: 0.65rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
     </style>
 
     <div class="rep-container">

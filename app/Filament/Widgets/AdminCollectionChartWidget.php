@@ -37,7 +37,7 @@ class AdminCollectionChartWidget extends ChartWidget
                 ->sum('pounds_collected');
 
             $data[] = (float) $pounds;
-            $labels[] = $date->format('M d (D)');
+            $labels[] = $date->format('M d');
         }
 
         return [
@@ -52,6 +52,20 @@ class AdminCollectionChartWidget extends ChartWidget
                 ],
             ],
             'labels' => $labels,
+        ];
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'scales' => [
+                'x' => [
+                    'ticks' => [
+                        'maxRotation' => 0,
+                        'autoSkip' => true,
+                    ],
+                ],
+            ],
         ];
     }
 

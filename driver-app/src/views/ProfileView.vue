@@ -338,7 +338,7 @@ onMounted(() => {
 /* Stats Cards */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -373,11 +373,13 @@ onMounted(() => {
   font-weight: 700;
   color: var(--text-primary);
   margin-top: 2px;
+  white-space: nowrap;
 }
 
 .accent-metric {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
   border-color: rgba(16, 185, 129, 0.15);
+  grid-column: span 2;
 }
 
 .accent-metric .metric-val {
@@ -501,6 +503,22 @@ onMounted(() => {
 @media (max-width: 991px) {
   .history-card {
     margin-top: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .accent-metric {
+    grid-column: span 1;
+  }
+  .stat-metric-card {
+    padding: 12px 16px;
+  }
+  .metric-val {
+    font-size: 18px;
   }
 }
 </style>

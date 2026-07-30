@@ -27,7 +27,6 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
             ->brandName('JNC GreaseCycling')
             ->brandLogo(asset('logo.jpg'))
             ->brandLogoHeight('2.5rem')

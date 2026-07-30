@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\DriverRouteController;
 use App\Http\Controllers\Api\DriverStopController;
 
 // Public Auth Route
-Route::post('/login', [AuthController::class, 'login'])->middleware('web');
 
 // Protected Driver App Routes
 Route::middleware('auth:sanctum')->group(function () {
