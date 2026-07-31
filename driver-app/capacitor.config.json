@@ -4,6 +4,9 @@
   "webDir": "dist",
   "server": {
     "url": "https://jcgreasecylingrouteapp.com/driver/",
-    "cleartext": true
+    "cleartext": true,
+    "allowNavigation": [
+      "jcgreasecylingrouteapp.com"
+    ]
   }
 }
