@@ -19,29 +19,59 @@ class DriverRouteController extends Controller
         $user = $request->user();
         $today = Carbon::today()->toDateString();
 
-        // 1. Get today's scheduled stops for routes assigned to the driver
-        $stops = ScheduledStop::with(['location.customer'])
-            ->whereHas('route', function ($query) use ($user) {
+        // 1. Find all routes assigned to the driver for today
+        $routes = Route::where('assigned_driver_id', $user->id)
+            ->whereDate('date_of_service', $today)
+            ->get();
+
+        // 2. Determine which route is active or should be shown next
+        $routeId = null;
+
+        if ($routes->isNotEmpty()) {
+            // Check for any in-progress route runs first
+            $activeRoute = $routes->first(function ($r) use ($today) {
+                return RouteRun::where('route_id', $r->id)
+                    ->whereDate('date', $today)
+                    ->where('status', 'in_progress')
+                    ->exists();
+            });
+
+            if ($activeRoute) {
+                $routeId = $activeRoute->id;
+            } else {
+                // Otherwise find the first route that has not been started yet
+                $notStartedRoute = $routes->first(function ($r) use ($today) {
+                    return !RouteRun::where('route_id', $r->id)
+                        ->whereDate('date', $today)
+                        ->exists();
+                });
+
+                $routeId = ($notStartedRoute ?: $routes->first())->id;
+            }
+        }
+
+        // 3. If still no route found from routes table, fallback to first stop's route
+        if (!$routeId) {
+            $fallbackStop = ScheduledStop::whereHas('route', function ($query) use ($user) {
                 $query->where('assigned_driver_id', $user->id);
             })
             ->whereDate('date', $today)
-            ->orderBy('position', 'asc')
-            ->get();
-
-        // Find which route is active today (if any)
-        $routeId = $stops->first()?->route_id;
-        
-        // If no stops are scheduled, check if there is a route assigned to the driver for today's date
-        if (!$routeId) {
-            $route = Route::where('assigned_driver_id', $user->id)
-                ->whereDate('date_of_service', $today)
-                ->first();
-            $routeId = $route?->id;
+            ->first();
+            
+            $routeId = $fallbackStop?->route_id;
         }
 
-        // 2. Get today's route run details
+        // 4. Get stops and route run only for the active route ID
+        $stops = collect();
         $routeRun = null;
+
         if ($routeId) {
+            $stops = ScheduledStop::with(['location.customer'])
+                ->where('route_id', $routeId)
+                ->whereDate('date', $today)
+                ->orderBy('position', 'asc')
+                ->get();
+
             $routeRun = RouteRun::where('route_id', $routeId)
                 ->whereDate('date', $today)
                 ->first();
