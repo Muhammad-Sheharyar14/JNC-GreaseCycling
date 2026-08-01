@@ -93,6 +93,11 @@
           </div>
         </div>
 
+        <!-- Map Card -->
+        <div v-if="routeStore.stops && routeStore.stops.length > 0" class="glass-card map-card-main">
+          <div id="route-overview-map" class="route-map"></div>
+        </div>
+
         <!-- Stops List -->
         <div class="stops-section">
           <div class="section-title-row">
@@ -151,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useRouteStore } from '../stores/route';
@@ -278,6 +283,164 @@ const goToStop = (stop) => {
   router.push({ name: 'stop-detail', params: { id: stop.id } });
 };
 
+// Google Maps overview integration
+const map = ref(null);
+const markers = ref([]);
+
+const parseCoords = (mapLink) => {
+  if (!mapLink) return null;
+  const queryPattern = /[?&](query|q)=([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+  const matchQuery = mapLink.match(queryPattern);
+  if (matchQuery) {
+    return { lat: parseFloat(matchQuery[2]), lng: parseFloat(matchQuery[3]) };
+  }
+  const atPattern = /@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+  const matchAt = mapLink.match(atPattern);
+  if (matchAt) {
+    return { lat: parseFloat(matchAt[1]), lng: parseFloat(matchAt[2]) };
+  }
+  return null;
+};
+
+const geocodeAddress = (address) => {
+  if (!address) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: address }, (results, status) => {
+      if (status === 'OK' && results[0] && results[0].geometry) {
+        const location = results[0].geometry.location;
+        resolve({ lat: location.lat(), lng: location.lng() });
+      } else {
+        console.warn('Google Geocoding failed:', status);
+        resolve(null);
+      }
+    });
+  });
+};
+
+const initOverviewMap = () => {
+  const checkGoogle = setInterval(async () => {
+    if (window.google && window.google.maps) {
+      clearInterval(checkGoogle);
+      await setupOverviewMap();
+    }
+  }, 100);
+};
+
+const setupOverviewMap = async () => {
+  const mapElement = document.getElementById('route-overview-map');
+  if (!mapElement) return;
+
+  // Clear existing markers
+  markers.value.forEach(m => m.setMap(null));
+  markers.value = [];
+
+  const bounds = new google.maps.LatLngBounds();
+  let validStopsCount = 0;
+
+  map.value = new google.maps.Map(mapElement, {
+    zoom: 12,
+    center: { lat: 31.5204, lng: 74.3587 },
+    mapId: 'DEMO_MAP_ID',
+    disableDefaultUI: false,
+    zoomControl: true,
+    gestureHandling: 'greedy',
+  });
+
+  for (const stop of routeStore.stops) {
+    const loc = stop.location;
+    if (!loc) continue;
+
+    let lat = loc.latitude ? parseFloat(loc.latitude) : null;
+    let lng = loc.longitude ? parseFloat(loc.longitude) : null;
+
+    if (!lat || !lng) {
+      const parsed = parseCoords(loc.map_link);
+      if (parsed) {
+        lat = parsed.lat;
+        lng = parsed.lng;
+      } else if (loc.service_address) {
+        const coords = await geocodeAddress(loc.service_address);
+        if (coords) {
+          lat = coords.lat;
+          lng = coords.lng;
+        }
+      }
+    }
+
+    if (lat && lng) {
+      const pos = { lat, lng };
+      bounds.extend(pos);
+      validStopsCount++;
+
+      let markerColor = '#f59e0b';
+      if (stop.status === 'completed') {
+        markerColor = '#10b981';
+      } else if (stop.status === 'skipped') {
+        markerColor = '#ef4444';
+      }
+
+      const marker = new google.maps.Marker({
+        position: pos,
+        map: map.value,
+        title: `#${stop.position} - ${loc.name}`,
+        label: {
+          text: String(stop.position),
+          color: '#ffffff',
+          fontWeight: 'bold',
+          fontSize: '11px',
+        },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: markerColor,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 13,
+          labelOrigin: new google.maps.Point(0, 0),
+        },
+      });
+
+      const infoWindowContent = `
+        <div style="color: #0f172a; font-family: sans-serif; padding: 4px; max-width: 200px;">
+          <h4 style="margin: 0 0 4px 0; font-size: 13px;">#${stop.position} ${loc.name}</h4>
+          <p style="margin: 0 0 6px 0; font-size: 11px; color: #475569; line-height: 1.3;">${loc.service_address}</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="display: inline-block; padding: 2px 6px; font-size: 9px; font-weight: bold; border-radius: 4px; color: #fff; background-color: ${
+              stop.status === 'completed' ? '#10b981' : stop.status === 'skipped' ? '#ef4444' : '#f59e0b'
+            };">${stop.status.toUpperCase()}</span>
+            <a href="#/stops/${stop.id}" style="font-size: 10px; color: #3b82f6; text-decoration: none; font-weight: bold;">View Details ➔</a>
+          </div>
+        </div>
+      `;
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: infoWindowContent,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(map.value, marker);
+      });
+
+      markers.value.push(marker);
+    }
+  }
+
+  if (validStopsCount > 0) {
+    map.value.fitBounds(bounds);
+    const listener = google.maps.event.addListener(map.value, 'idle', () => {
+      if (map.value.getZoom() > 16) map.value.setZoom(16);
+      google.maps.event.removeListener(listener);
+    });
+  }
+};
+
+watch(() => routeStore.stops, (newStops) => {
+  if (newStops && newStops.length > 0) {
+    initOverviewMap();
+  }
+}, { deep: true });
+
 onMounted(() => {
   routeStore.fetchTodayRoute();
   document.addEventListener('click', closeDropdown);
@@ -293,6 +456,20 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+.map-card-main {
+  margin-bottom: 24px;
+  padding: 0;
+  overflow: hidden;
+  height: 280px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-glass);
+}
+
+.route-map {
+  width: 100%;
+  height: 100%;
 }
 
 .content-area {
