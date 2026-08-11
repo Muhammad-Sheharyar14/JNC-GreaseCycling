@@ -18,6 +18,10 @@ class Location extends Model
         'service_address',
         'map_link',
         'special_instructions',
+        'operating_hours',
+        'bin_size_gallons',
+        'material_type',
+        'attachments',
         'service_frequency',
         'reimbursement_rate',
         'status',
@@ -26,7 +30,31 @@ class Location extends Model
 
     protected $casts = [
         'reimbursement_rate' => 'decimal:2',
+        'attachments' => 'array',
     ];
+
+    protected $appends = [
+        'attachment_urls',
+    ];
+
+    /**
+     * Get full public URLs for location attachments.
+     */
+    public function getAttachmentUrlsAttribute(): array
+    {
+        if (empty($this->attachments) || !is_array($this->attachments)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($path) {
+            if (!$path) return null;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            $cleanPath = preg_replace('#^/?(storage/)+#', '', $path);
+            return asset('storage/' . $cleanPath);
+        }, $this->attachments)));
+    }
 
     /**
      * Get the customer that owns the location.

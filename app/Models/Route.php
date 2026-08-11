@@ -15,6 +15,7 @@ class Route extends Model
         'name',
         'date_of_service',
         'assigned_driver_id',
+        'vehicle_id',
     ];
 
     protected $casts = [
@@ -27,6 +28,14 @@ class Route extends Model
     public function assignedDriver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_driver_id');
+    }
+
+    /**
+     * Get the vehicle assigned to this route.
+     */
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     /**

@@ -31,6 +31,15 @@ class RouteForm
                     ->searchable()
                     ->preload()
                     ->default(null),
+                Select::make('vehicle_id')
+                    ->label('Assigned Vehicle')
+                    ->relationship(
+                        name: 'vehicle',
+                        titleAttribute: 'name'
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->default(null),
             ]);
     }
 }

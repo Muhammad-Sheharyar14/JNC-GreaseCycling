@@ -43,6 +43,24 @@
           </div>
         </div>
 
+        <!-- Location Attachments & Photos -->
+        <div class="glass-card info-card">
+          <h3>📁 Location Attachments & Photos</h3>
+          <div v-if="locationAttachments.length > 0" class="attachments-grid">
+            <a 
+              v-for="(url, idx) in locationAttachments" 
+              :key="idx" 
+              :href="url" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="attachment-item"
+            >
+              <img :src="url" alt="Location Attachment" class="attachment-img" />
+            </a>
+          </div>
+          <p v-else class="text-empty">No location photos or attachments available.</p>
+        </div>
+
         <!-- Instructions Section -->
         <div class="glass-card info-card">
           <h3>🔑 Special Instructions</h3>
@@ -209,6 +227,21 @@ const googleMapsUrl = computed(() => {
   }
   const query = encodeURIComponent(stop.value.location.service_address);
   return `https://www.google.com/maps/search/?api=1&query=${query}`;
+});
+
+const locationAttachments = computed(() => {
+  const loc = stop.value?.location;
+  if (!loc) return [];
+  if (loc.attachment_urls && Array.isArray(loc.attachment_urls) && loc.attachment_urls.length > 0) {
+    return loc.attachment_urls;
+  }
+  if (loc.attachments && Array.isArray(loc.attachments)) {
+    return loc.attachments.map(p => {
+      if (typeof p === 'string' && (p.startsWith('http://') || p.startsWith('https://'))) return p;
+      return `/storage/${String(p).replace(/^\//, '')}`;
+    });
+  }
+  return [];
 });
 
 const isRouteActive = computed(() => {
@@ -606,7 +639,11 @@ const stopWatchingLocation = () => {
 };
 
 const goBack = () => {
-  router.push({ name: 'route' });
+  if (routeStore.routeId) {
+    router.push({ name: 'route', params: { id: routeStore.routeId } });
+  } else {
+    router.push({ name: 'routes' });
+  }
 };
 
 const goToLogPickup = () => {
@@ -965,6 +1002,34 @@ onUnmounted(() => {
   font-family: monospace;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.attachments-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.attachment-item {
+  border-radius: var(--border-radius-md, 8px);
+  overflow: hidden;
+  border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.15));
+  display: inline-block;
+  background: rgba(15, 23, 42, 0.6);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.attachment-item:hover {
+  transform: scale(1.04);
+  border-color: var(--accent-color, #f59e0b);
+}
+
+.attachment-img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  display: block;
 }
 
 @media (max-width: 767px) {

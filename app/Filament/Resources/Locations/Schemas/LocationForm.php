@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Locations\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -78,6 +79,33 @@ class LocationForm
                     ->columnSpanFull(),
                 Textarea::make('special_instructions')
                     ->default(null)
+                    ->columnSpanFull(),
+                TextInput::make('operating_hours')
+                    ->label('Operating Hours')
+                    ->placeholder('e.g. Mon-Fri 8:00 AM - 10:00 PM')
+                    ->default(null),
+                TextInput::make('bin_size_gallons')
+                    ->label('Bin Size (Gallons)')
+                    ->numeric()
+                    ->placeholder('e.g. 250')
+                    ->default(null),
+                Select::make('material_type')
+                    ->label('Material Type')
+                    ->options([
+                        'used_cooking_oil' => 'Used Cooking Oil (UCO)',
+                        'grease' => 'Yellow / Brown Grease',
+                        'tallow' => 'Tallow',
+                        'other' => 'Other / Feedstocks',
+                    ])
+                    ->default('used_cooking_oil')
+                    ->required(),
+                FileUpload::make('attachments')
+                    ->label('Location Attachments & Photos')
+                    ->multiple()
+                    ->disk('public')
+                    ->directory('location-attachments')
+                    ->visibility('public')
+                    ->preserveFilenames()
                     ->columnSpanFull(),
                 Select::make('service_frequency')
                     ->options(['weekly' => 'Weekly', 'biweekly' => 'Biweekly', 'monthly' => 'Monthly', 'on_call' => 'On Call'])

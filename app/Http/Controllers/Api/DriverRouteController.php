@@ -194,4 +194,79 @@ class DriverRouteController extends Controller
             'recent_pickups' => $recentPickups,
         ]);
     }
+
+    /**
+     * Get all routes assigned to the driver for today.
+     */
+    public function listRoutes(Request $request)
+    {
+        $user = $request->user();
+        $today = Carbon::today()->toDateString();
+
+        $routes = Route::where('assigned_driver_id', $user->id)
+            ->whereDate('date_of_service', $today)
+            ->get();
+
+        $routesData = $routes->map(function ($route) use ($today) {
+            $routeRun = RouteRun::where('route_id', $route->id)
+                ->whereDate('date', $today)
+                ->first();
+
+            $totalStops = ScheduledStop::where('route_id', $route->id)
+                ->whereDate('date', $today)
+                ->count();
+
+            $completedStops = ScheduledStop::where('route_id', $route->id)
+                ->whereDate('date', $today)
+                ->where('status', 'completed')
+                ->count();
+
+            $skippedStops = ScheduledStop::where('route_id', $route->id)
+                ->whereDate('date', $today)
+                ->where('status', 'skipped')
+                ->count();
+
+            return [
+                'id' => $route->id,
+                'name' => $route->name,
+                'status' => $routeRun?->status ?: 'not_started',
+                'total_stops' => $totalStops,
+                'completed_stops' => $completedStops,
+                'skipped_stops' => $skippedStops,
+            ];
+        });
+
+        return response()->json([
+            'routes' => $routesData,
+        ]);
+    }
+
+    /**
+     * Get details and scheduled stops for a specific route.
+     */
+    public function showRoute(Request $request, $id)
+    {
+        $user = $request->user();
+        $today = Carbon::today()->toDateString();
+
+        $route = Route::where('id', $id)
+            ->where('assigned_driver_id', $user->id)
+            ->firstOrFail();
+
+        $stops = ScheduledStop::with(['location.customer'])
+            ->where('route_id', $route->id)
+            ->whereDate('date', $today)
+            ->orderBy('position', 'asc')
+            ->get();
+
+        $routeRun = RouteRun::where('route_id', $route->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        return response()->json([
+            'route_id' => $route->id,
+            'route_run' => $routeRun,
+            'stops' => $stops,
+        ]);
+    }
 }

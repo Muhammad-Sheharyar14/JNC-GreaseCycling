@@ -28,11 +28,14 @@ class AppServiceProvider extends ServiceProvider
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
             \Filament\View\PanelsRenderHook::HEAD_END,
-            fn (): string => '<style>
+            fn (): string => '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+            <style>
                 @media (max-width: 1024px) {
-                    .fi-topbar {
-                        height: calc(4rem + env(safe-area-inset-top, 0px)) !important;
+                    .fi-topbar-ctn {
                         padding-top: env(safe-area-inset-top, 0px) !important;
+                    }
+                    .fi-topbar {
+                        padding-top: 0px !important;
                     }
                     .fi-sidebar {
                         padding-top: env(safe-area-inset-top, 0px) !important;

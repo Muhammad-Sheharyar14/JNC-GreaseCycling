@@ -3,6 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="app-logo-title">
+        <button @click="goBack" class="btn-back-nav" aria-label="Go Back">⬅</button>
         <img src="/logo.jpg" class="app-logo-inline" alt="JNC GreaseCycling Logo" />
         <span class="app-title">GreaseCycling</span>
       </div>
@@ -157,12 +158,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useRouteStore } from '../stores/route';
 import CustomModal from '../components/CustomModal.vue';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const routeStore = useRouteStore();
 
@@ -281,6 +283,10 @@ const goToStop = (stop) => {
     return;
   }
   router.push({ name: 'stop-detail', params: { id: stop.id } });
+};
+
+const goBack = () => {
+  router.push({ name: 'routes' });
 };
 
 // Google Maps overview integration
@@ -442,6 +448,9 @@ watch(() => routeStore.stops, (newStops) => {
 }, { deep: true });
 
 onMounted(() => {
+  if (route.params.id) {
+    routeStore.routeId = parseInt(route.params.id);
+  }
   routeStore.fetchTodayRoute();
   document.addEventListener('click', closeDropdown);
 });
@@ -470,6 +479,24 @@ onUnmounted(() => {
 .route-map {
   width: 100%;
   height: 100%;
+}
+
+.btn-back-nav {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: transform 0.2s;
+}
+
+.btn-back-nav:active {
+  transform: scale(0.85);
 }
 
 .content-area {

@@ -173,6 +173,57 @@ class DriverApiTest extends TestCase
     }
 
     /**
+     * Test logging completed pickup with extended material, gross/tare weight, and signature.
+     */
+    public function test_driver_can_log_extended_pickup_data_with_material_and_weights(): void
+    {
+        $response = $this->actingAs($this->driverUser, 'sanctum')
+            ->postJson("/api/driver/stops/{$this->scheduledStop->id}/pickup", [
+                'status' => 'completed',
+                'material_type' => 'used_cooking_oil',
+                'gross_weight' => 550.00,
+                'tare_weight' => 150.00,
+                'pounds_collected' => 400.00,
+                'container_count' => 2,
+                'notes' => 'Full tank collection',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('pickup_event.material_type', 'used_cooking_oil')
+            ->assertJsonPath('pickup_event.gross_weight', "550.00")
+            ->assertJsonPath('pickup_event.tare_weight', "150.00")
+            ->assertJsonPath('pickup_event.pounds_collected', "400.00");
+
+        $this->assertDatabaseHas('pickup_events', [
+            'location_id' => $this->location->id,
+            'material_type' => 'used_cooking_oil',
+            'gross_weight' => 550.00,
+            'tare_weight' => 150.00,
+            'pounds_collected' => 400.00,
+        ]);
+    }
+
+    /**
+     * Test manifest receipt page loads.
+     */
+    public function test_manifest_receipt_page_loads(): void
+    {
+        $pickupEvent = \App\Models\PickupEvent::create([
+            'location_id' => $this->location->id,
+            'route_id' => $this->route->id,
+            'driver_id' => $this->driverUser->id,
+            'occurred_at' => now(),
+            'pounds_collected' => 150.00,
+            'status' => 'completed',
+        ]);
+
+        $response = $this->get("/manifest/{$pickupEvent->id}");
+        $response->assertStatus(200)
+            ->assertSee('COLLECTION MANIFEST')
+            ->assertSee('Pizza House');
+    }
+
+    /**
      * Test logging skipped stop.
      */
     public function test_driver_can_log_skipped_stop(): void
@@ -296,5 +347,36 @@ class DriverApiTest extends TestCase
             ]);
 
         $response->assertStatus(403);
+    }
+
+    /**
+     * Test fallback resolution when passing location_id or when ScheduledStop ID was regenerated.
+     */
+    public function test_log_pickup_resolves_stop_by_location_id_fallback(): void
+    {
+        $response = $this->actingAs($this->driverUser, 'sanctum')
+            ->postJson("/api/driver/stops/{$this->location->id}/pickup", [
+                'status' => 'completed',
+                'pounds_collected' => 50.00,
+                'notes' => 'Fallback test by location id',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('pickup_event.status', 'completed');
+    }
+
+    /**
+     * Test clean error response when a stop/location is not found.
+     */
+    public function test_non_existent_stop_returns_clean_error_message(): void
+    {
+        $response = $this->actingAs($this->driverUser, 'sanctum')
+            ->postJson('/api/driver/stops/999999/pickup', [
+                'status' => 'completed',
+                'pounds_collected' => 50.00,
+            ]);
+
+        $response->assertStatus(404)
+            ->assertJsonPath('message', 'Scheduled stop not found. Please refresh your route.');
     }
 }

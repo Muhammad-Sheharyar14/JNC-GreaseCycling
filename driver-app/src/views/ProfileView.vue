@@ -140,7 +140,11 @@ const error = ref('');
 const profileData = ref(null);
 
 const goBack = () => {
-  router.push({ name: 'route' });
+  if (routeStore.routeId) {
+    router.push({ name: 'route', params: { id: routeStore.routeId } });
+  } else {
+    router.push({ name: 'routes' });
+  }
 };
 
 const formatDate = (dateStr) => {

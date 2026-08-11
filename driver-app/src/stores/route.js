@@ -6,6 +6,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const useRouteStore = defineStore('route', {
   state: () => ({
+    routesList: [],
     routeId: null,
     routeRun: null,
     stops: [],
@@ -14,7 +15,57 @@ export const useRouteStore = defineStore('route', {
   }),
   
   actions: {
+    async fetchAssignedRoutes() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(`${apiBaseUrl}/driver/routes`);
+        this.routesList = response.data.routes || [];
+      } catch (err) {
+        console.error('Error fetching routes list:', err);
+        this.error = err.response?.data?.message || 'Failed to fetch assigned routes.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchRouteDetails(routeId) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(`${apiBaseUrl}/driver/routes/${routeId}`);
+        this.routeId = response.data.route_id;
+        this.routeRun = response.data.route_run;
+        this.stops = response.data.stops || [];
+        
+        // Cache this route data locally in IndexedDB
+        await cacheRoute({
+          routeId: this.routeId,
+          routeRun: this.routeRun,
+          stops: this.stops,
+        });
+      } catch (err) {
+        console.warn('Network request failed, attempting to load cached route...', err);
+        
+        // Fallback: Read from local cache in IndexedDB
+        const cached = await getCachedRoute();
+        if (cached && (cached.routeId === parseInt(routeId) || !routeId)) {
+          this.routeId = cached.routeId;
+          this.routeRun = cached.routeRun;
+          this.stops = cached.stops || [];
+          this.error = 'Running in offline mode. Loading cached stops.';
+        } else {
+          this.error = err.response?.data?.message || 'Failed to load route details.';
+        }
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async fetchTodayRoute() {
+      if (this.routeId) {
+        return this.fetchRouteDetails(this.routeId);
+      }
       this.loading = true;
       this.error = null;
       try {
@@ -116,6 +167,11 @@ export const useRouteStore = defineStore('route', {
           this.stops[stopIndex].pickup_event = {
             occurred_at: new Date().toISOString(),
             pounds_collected: payload.status === 'completed' ? payload.pounds_collected : null,
+            material_type: payload.material_type || 'used_cooking_oil',
+            gross_weight: payload.gross_weight || null,
+            tare_weight: payload.tare_weight || null,
+            net_weight: payload.net_weight || payload.pounds_collected || null,
+            photos: payload.photos || [],
             skip_reason: payload.status === 'skipped' ? payload.skip_reason : null,
             notes: payload.notes || null,
           };

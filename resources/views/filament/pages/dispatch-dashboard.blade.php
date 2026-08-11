@@ -35,6 +35,8 @@
             font-weight: 500;
             outline: none;
             transition: border-color 0.2s;
+            box-sizing: border-box;
+            max-width: 100%;
         }
         .dark .op-date-picker {
             background-color: #1e293b;
@@ -191,18 +193,25 @@
         /* Mobile Optimization Queries */
         @media (max-width: 640px) {
             .op-card {
-                padding: 1rem 0.75rem;
+                padding: 1.25rem 1rem;
             }
             .op-header-bar {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 1rem;
+                padding-bottom: 1.25rem;
             }
             .op-header-bar div {
                 text-align: center;
+                width: 100%;
             }
             .op-date-picker {
                 width: 100%;
+                max-width: 100%;
                 text-align: center;
+                box-sizing: border-box;
+                display: block;
+                height: 2.75rem;
             }
             .btn-header p {
                 display: none;

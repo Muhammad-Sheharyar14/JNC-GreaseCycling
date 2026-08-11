@@ -152,6 +152,17 @@ body {
   box-shadow: 0 0 0 4px rgba(224, 79, 38, 0.15);
 }
 
+/* Fix select dropdown options visibility in dark mode */
+select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  padding: 10px;
+}
+
+select option:disabled {
+  color: #9ca3af !important;
+}
+
 /* Header bar */
 .app-header {
   height: 64px;

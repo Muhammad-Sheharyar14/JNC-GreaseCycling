@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
 import LoginView from '../views/LoginView.vue';
+import RoutesListView from '../views/RoutesListView.vue';
 import RouteView from '../views/RouteView.vue';
 import StopDetailView from '../views/StopDetailView.vue';
 import PickupView from '../views/PickupView.vue';
@@ -16,6 +17,12 @@ const routes = [
   },
   {
     path: '/',
+    name: 'routes',
+    component: RoutesListView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/routes/:id',
     name: 'route',
     component: RouteView,
     meta: { requiresAuth: true }
@@ -51,7 +58,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login' });
   } else if (to.meta.guest && authStore.isAuthenticated) {
-    next({ name: 'route' });
+    next({ name: 'routes' });
   } else {
     next();
   }

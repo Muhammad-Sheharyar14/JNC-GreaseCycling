@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => {
         background_color: '#0a0e17',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: isCapacitor ? '/' : '/driver/',
+        start_url: isCapacitor ? '/' : '/driver/',
         icons: [
           {
             src: 'icons/icon-192x192.png',

@@ -15,12 +15,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Driver Route Management
     Route::get('/driver/route', [DriverRouteController::class, 'index']);
+    Route::get('/driver/routes', [DriverRouteController::class, 'listRoutes']);
+    Route::get('/driver/routes/{id}', [DriverRouteController::class, 'showRoute']);
     Route::get('/driver/profile', [DriverRouteController::class, 'profile']);
     Route::post('/driver/route/start', [DriverRouteController::class, 'start']);
     Route::post('/driver/route/complete', [DriverRouteController::class, 'complete']);
     Route::post('/driver/location', [\App\Http\Controllers\Api\DriverLocationController::class, 'update']);
 
     // Driver Stop Management
-    Route::get('/driver/stops/{scheduledStop}', [DriverStopController::class, 'show']);
-    Route::post('/driver/stops/{scheduledStop}/pickup', [DriverStopController::class, 'logPickup']);
+    Route::get('/driver/stops/{id}', [DriverStopController::class, 'show']);
+    Route::post('/driver/stops/{id}/pickup', [DriverStopController::class, 'logPickup']);
 });

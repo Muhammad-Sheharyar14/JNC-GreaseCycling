@@ -19,11 +19,24 @@ class PickupEvent extends Model
         'notes',
         'status',
         'skip_reason',
+        'material_type',
+        'unit',
+        'gross_weight',
+        'tare_weight',
+        'net_weight',
+        'container_count',
+        'driver_signature_path',
+        'customer_signature_path',
+        'photos',
     ];
 
     protected $casts = [
         'occurred_at' => 'datetime',
         'pounds_collected' => 'decimal:2',
+        'gross_weight' => 'decimal:2',
+        'tare_weight' => 'decimal:2',
+        'net_weight' => 'decimal:2',
+        'photos' => 'array',
     ];
 
     /**
